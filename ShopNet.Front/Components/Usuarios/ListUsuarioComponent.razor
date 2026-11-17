@@ -1,0 +1,54 @@
+@using ShopNet.Front.Models
+@using ShopNet.Front.Services.Contracts
+@using ShopNet.Models.Dtos
+
+@inject NavigationManager navManager
+@inject IUsuarioService usuarioService
+
+@if (usuarios.Count == 0 && !isBusy)
+{
+    <h3>No hay usuarios</h3>
+}
+else if (!isBusy)
+{
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Rol</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var usuario in usuarios)
+            {
+                <tr>
+                    <td>@usuario.UsuNombre</td>
+                    <td>@usuario.UsuRol</td>
+                    <td class="generic-icon"><a href="usuario/update/@usuario.UsuID"><span class="oi oi-pencil" /></a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@if (isBusy)
+{
+    <div class="busy"></div>
+}
+
+@code {
+
+    List<UsuarioListDto> usuarios = new List<UsuarioListDto>();
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+        isBusy = true;
+        usuarios = await usuarioService.GetItems();
+        isBusy = false;
+    }
+
+}

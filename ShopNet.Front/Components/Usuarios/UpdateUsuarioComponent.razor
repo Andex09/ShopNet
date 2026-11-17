@@ -1,0 +1,144 @@
+@using ShopNet.Front.Models
+@using Models;
+@using ShopNet.Front.Services.Contracts
+
+
+<div class="div-container-form">
+    <AlertMessageComponent Message="@message" MessageType="@messageType" />
+    <EditForm Model="oUsuario" OnValidSubmit="@Update" class="col-md-8 container-form">
+        <DataAnnotationsValidator />
+        <h3>Crear usuario</h3>
+        <div class="form-group">
+            <div>
+                <label>Nombre</label>
+                <InputText @bind-Value="oUsuario.UsuNombre" class="form-control" />
+            </div>
+            <div>
+                <label>Contraseña</label>
+                <InputText type="password" @bind-Value="oUsuario.UsuPass" class="form-control" />
+            </div>
+            <div>
+                <InputCheckbox @bind-Value="admin" class="form-check-inline" />
+                <label class="form-check-label">¿Usuario Administrador?</label>
+            </div>
+        </div>
+        <div class="d-inline-block">
+            <input type="submit" value="Actualizar" class="btn btn-primary btn-sm" />
+            <input type="button" value="Eliminar" @onclick="Delete" class="btn btn-primary btn-sm" />
+            <input type="button" value="Cerrar" @onclick="Close" class="btn btn-primary btn-sm" />
+        </div>
+    </EditForm>
+
+    <h4>Solo si ingresa un valor en el campo contraseña, esta será actualizada</h4>
+</div>
+
+@if (isBusy)
+{
+    <div class="busy"></div>
+}
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IUsuarioService usuarioService
+
+@code {
+    [Parameter]
+    public string IdUsuario { get; set; }
+
+    UsuarioUpdateDto oUsuario = new UsuarioUpdateDto();
+
+    bool admin = false;
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+        isBusy = true;
+
+        try
+        {
+            var usuario = await httpClient.GetFromJsonAsync<UsuarioListDto>($"/api/Usuario/{IdUsuario}");
+            oUsuario.UsuID = usuario.UsuID;
+            oUsuario.UsuRol = usuario.UsuRol;
+            oUsuario.UsuNombre = usuario.UsuNombre;
+
+            admin = oUsuario.UsuRol == "Admin";
+        }
+        catch (Exception ex)
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo consultar el usuario";
+            isBusy = false;
+            return;
+        }
+
+        isBusy = false;
+    }
+
+    private async void Update()
+    {
+        isBusy = true;
+
+        try
+        {
+            oUsuario.UsuRol = admin ? "Admin" : "Basic";
+            oUsuario.UsuPass = oUsuario.UsuPass != null ? oUsuario.UsuPass : "";
+
+            var response = await httpClient.PutAsJsonAsync<UsuarioUpdateDto>($"/api/Usuario/{IdUsuario}", oUsuario);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            {
+                navManager.NavigateTo("/Usuario/list", true);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                messageType = AlertMessageType.Error;
+                message = "No se encontró el usuario";
+                isBusy = false;
+                return;
+            }
+            else
+            {
+                messageType = AlertMessageType.Error;
+                message = "No se pudo actualizar el usuario";
+                isBusy = false;
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo actualizar el usuario";
+            isBusy = false;
+            return;
+        }
+
+        isBusy = false;
+    }
+
+    private async void Delete()
+    {
+
+        var response = await httpClient.DeleteAsync($"/api/Usuario/{IdUsuario}");
+
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/usuario/list", true);
+        }
+        else
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo eliminar el producto";
+            isBusy = false;
+            return;
+        }
+    }
+
+    private void Close()
+    {
+        navManager.NavigateTo("producto/list");
+    }
+}

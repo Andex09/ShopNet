@@ -1,0 +1,16 @@
+@page "/logout"
+@using ShopNet.Front.Auth
+
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+<h2>Cerrando sesión...</h2>
+
+@code {
+
+    protected async override Task OnInitializedAsync(){
+        var customAuthStateProvider = (AuthStateProvider)authStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(null);
+        navManager.NavigateTo("/", true);
+    }
+}

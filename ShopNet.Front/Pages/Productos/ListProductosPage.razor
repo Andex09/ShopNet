@@ -1,0 +1,22 @@
+﻿@page "/producto/list"
+
+<PageTitle>Productos</PageTitle>
+
+<h1>Productos disponibles</h1>
+
+<AuthorizeView>
+    <ListProductoComponent />
+</AuthorizeView>
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="fab-container">
+            <a href="producto/create" style="text-decoration: none">
+                <div class="fab fab-icon-holder">
+                    <span class="oi oi-plus rounded-circle shadow-sm" />
+                </div>
+            </a>
+        </div>
+    </Authorized>
+</AuthorizeView>
+

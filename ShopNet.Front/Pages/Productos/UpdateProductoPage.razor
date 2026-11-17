@@ -1,0 +1,24 @@
+﻿@page "/producto/update/{IdProducto}"
+
+<PageTitle>Actualizar producto</PageTitle>
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <UpdateProductoComponent IdProducto="@IdProducto" />
+    </Authorized>
+    <NotAuthorized>
+        No autorizado
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    [Parameter]
+    public string IdProducto { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        IdProducto = IdProducto;
+    }
+}

@@ -1,0 +1,21 @@
+﻿@page "/Usuario/list"
+
+<PageTitle>Usuarios</PageTitle>
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <h1>Usuarios</h1>
+
+        <ListUsuarioComponent />
+        <div class="fab-container">
+            <a href="usuario/create" style="text-decoration: none">
+                <div class="fab fab-icon-holder">
+                    <span class="oi oi-plus rounded-circle shadow-sm" />
+                </div>
+            </a>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        No autorizado
+    </NotAuthorized>
+</AuthorizeView>

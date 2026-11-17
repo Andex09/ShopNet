@@ -1,0 +1,163 @@
+@using ShopNet.Front.Models
+@using Models;
+@using ShopNet.Front.Services.Contracts
+
+<div class="div-container-form">
+    <AlertMessageComponent Message="@message" MessageType="@messageType" />
+    <EditForm Model="oPedido" class="col-md-10 container-form">
+        <div class="form-group">
+
+            <div class="form-group">
+                <label>Usuario ID</label>
+                <InputNumber @bind-Value="oPedido.PedUsu" class="form-control" readonly>
+                </InputNumber>
+            </div>
+            <div class="form-group">
+                <label>Producto</label>
+                <select @onchange="SetProducto" class="form-select">
+                    <option value="0">Seleccione un producto</option>
+                    @foreach (var producto in productos)
+                    {
+                        <option value="@producto.ProdID">@producto.ProDesc</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label>Cantidad</label>
+                <input type="number" value="oPedido.PedCant" @onchange="SetCantidad" class="form-control" />
+            </div>
+            <div>
+                <label>Valor unitario</label>
+                <InputNumber @bind-Value="productoSelected.ProValor" class="form-control" readonly />
+            </div>
+            <div>
+                <label>Sub total</label>
+                <InputNumber @bind-Value="oPedido.PedSubTot" class="form-control" readonly />
+            </div>
+            <div>
+                <label>IVA</label>
+                <InputNumber @bind-Value="oPedido.PedIVA" class="form-control" readonly />
+            </div>
+            <div>
+                <label>Total</label>
+                <InputNumber @bind-Value="oPedido.PedTotal" class="form-control" readonly />
+            </div>
+
+        </div>
+        <div class="d-inline-block m-2">
+            <input type="button" value="Crear" @onclick="Create" class="btn btn-primary btn-sm" />
+            <input type="button" value="Cerrar" @onclick="Close" class="btn btn-primary btn-sm" />
+        </div>
+    </EditForm>
+    @if (isBusy)
+    {
+        <div class="busy"></div>
+    }
+</div>
+
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IProductoService productoService
+@inject IPedidoService pedidoService
+@inject IUsuarioService usuarioService
+
+@code {
+
+    PedidoDto oPedido = new PedidoDto();
+    List<ProductoDto> productos = new List<ProductoDto>();
+    List<UsuarioListDto> usuarios = new List<UsuarioListDto>();
+    ProductoDto productoSelected = new ProductoDto();
+
+    int prueba = 0;
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+        productos = await productoService.GetItems();
+        usuarios = await usuarioService.GetItems();
+
+        var customProvider = (AuthStateProvider)authStateProvider;
+        oPedido.PedUsu = await customProvider.GetUserId();
+
+    }
+
+    private async void Create()
+    {
+        isBusy = true;
+        if (oPedido.PedUsu == 0 || oPedido.PedPro == 0)
+        {
+            messageType = AlertMessageType.Error;
+            message = "Debe seleccionar un usuario y un producto";
+            isBusy = false;
+            return;
+        }
+
+        if (oPedido.PedCant == 0)
+        {
+            messageType = AlertMessageType.Error;
+            message = "La cantidad debe ser mayor a cero";
+            isBusy = false;
+            return;
+        }
+
+        var response = await httpClient.PostAsJsonAsync<PedidoDto>($"/api/PedidoUsuario/", oPedido);
+
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/Producto/list", true);
+        }
+        else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo crear el pedido";
+
+            isBusy = false;
+            return;
+        }
+
+        isBusy = false;
+
+    }
+
+    private void Close()
+    {
+        navManager.NavigateTo("Pedido/list");
+    }
+
+    void SetProducto(ChangeEventArgs e)
+    {
+        if (e.Value is not null && e.Value != "")
+        {
+            productoSelected = productos.Where(p => p.ProdID == Convert.ToInt16(e.Value)).FirstOrDefault();
+            oPedido.PedPro = productoSelected.ProdID;
+            oPedido.PedVrUnit = productoSelected.ProValor;
+            Calcular();
+        }
+    }
+
+    void SetCantidad(ChangeEventArgs e)
+    {
+        if (e.Value is not null)
+        {
+            oPedido.PedCant = Convert.ToInt16(e.Value);
+            Calcular();
+        }
+    }
+
+    private void Calcular()
+    {
+        decimal subTotal = Convert.ToDecimal(oPedido.PedCant) * oPedido.PedVrUnit;
+        decimal ivaPorcentaje = 0.19m;
+        decimal iva = subTotal * ivaPorcentaje;
+        decimal total = subTotal + iva;
+
+        oPedido.PedIVA = Convert.ToDouble(iva);
+        oPedido.PedSubTot = subTotal;
+        oPedido.PedTotal = total;
+    }
+}

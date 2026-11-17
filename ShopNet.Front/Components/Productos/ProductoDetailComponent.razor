@@ -1,0 +1,59 @@
+@using ShopNet.Front.Models
+@using Models;
+@using ShopNet.Front.Services.Contracts
+
+<div class="container-fluid flex-column" style="width: 80vh">
+    
+    <h3>Detalle del producto</h3>
+    
+    <table class="table table-borderless" style="margin:12px">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <th>@oProducto.ProdID</th>
+            </tr>
+            <tr>
+                <th>Descripción</th>
+                <th>@oProducto.ProDesc</th>
+            </tr>
+            <tr>
+                <th>Valor</th>
+                <th>@oProducto.ProValor</th>
+            </tr>           
+        </tbody>
+    </table>
+    <input type="button" value="Cerrar" @onclick="Close" class="btn btn-primary btn-sm" />
+</div>
+@if (isBusy)
+{
+    <div class="align-self-center busy"></div>
+}
+
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IProductoService productoService
+
+@code {
+    [Parameter]
+    public string IdProducto { get; set; }
+
+    ProductoDto oProducto = new ProductoDto();
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+        isBusy = true;
+        oProducto = await productoService.GetItem(Int16.Parse(IdProducto));
+        isBusy = false;
+    }
+
+    private void Close()
+    {
+        navManager.NavigateTo("producto/list");
+    }
+}

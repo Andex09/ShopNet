@@ -1,0 +1,70 @@
+@using ShopNet.Front.Auth
+@using ShopNet.Front.Models
+@using Models;
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+<div class="div-container-form">
+    
+    <AlertMessageComponent Message="@message" MessageType="@messageType" />
+    
+    <img src="../wwwroot/" />
+    
+    <EditForm Model="oUsuario" OnValidSubmit="@Login" class="col-md-6 container-form">
+        <DataAnnotationsValidator />
+
+        <h3>Iniciar sesión</h3>
+
+        <div class="form-group">
+            <label>Usuario</label>
+            <InputText @bind-Value="oUsuario.UsuNombre" class="form-control" required/>
+        </div>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <InputText type="password" @bind-Value="oUsuario.UsuPass" class="form-control" required />
+        </div>
+
+        <input type="submit" value="Iniciar Sesión" class="btn btn-primary btn-sm m-4" />
+    </EditForm>
+    @if (isBusy)
+    {
+        <div class="busy"></div>
+    }
+</div>
+
+@code {
+    UsuarioLoginRegisterDto oUsuario = new UsuarioLoginRegisterDto();
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+
+    private async Task Login()
+    {
+        isBusy = true;
+
+        var response = await httpClient.PostAsJsonAsync<UsuarioLoginRegisterDto>("/api/Auth/login", oUsuario);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var userSession = await response.Content.ReadFromJsonAsync<SesionUsuario>();
+            var customAuthStateProvider = (AuthStateProvider)authStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(userSession);
+            navManager.NavigateTo("/producto/list", true);
+        }
+        else
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo iniciar sesión";
+            isBusy = false;
+            return;
+        }
+        
+        isBusy = false;
+    }
+
+
+}

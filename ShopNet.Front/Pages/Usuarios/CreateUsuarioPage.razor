@@ -1,0 +1,13 @@
+﻿@page "/usuario/create"
+
+<PageTitle>Crear usuario</PageTitle>
+
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <CreateUsuarioComponent />
+    </Authorized>
+    <NotAuthorized>
+        No autorizado
+    </NotAuthorized>
+</AuthorizeView>

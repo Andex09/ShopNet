@@ -1,0 +1,79 @@
+@using ShopNet.Front.Models
+@using Models;
+@using ShopNet.Front.Services.Contracts
+
+<div class="container-fluid flex-column" style="width: 80vh">
+    <table class="table table-borderless" style="margin:12px">
+        <tbody>
+            <tr>
+                <th>ID</th>
+                <th>@oPedido.PedID</th>
+            </tr>
+            <tr>
+                <th>Usuario</th>
+                <th>@oPedido.PedUsu</th>
+            </tr>
+            <tr>
+                <th>Producto</th>
+                <th>@oPedido.PedPro</th>
+            </tr>
+            <tr>
+                <th>Valor unitario</th>
+                <th>@oPedido.PedVrUnit</th>
+            </tr>
+            <tr>
+                <th>Cantidad</th>
+                <th>@oPedido.PedCant</th>
+            </tr>
+            <tr>
+                <th>SubTotal</th>
+                <th>@oPedido.PedSubTot</th>
+            </tr>
+            <tr>
+                <th>IVA</th>
+                <th>@oPedido.PedIVA</th>
+            </tr>
+            <tr>
+                <th>Total</th>
+                <th>@oPedido.PedTotal</th>
+            </tr>
+        </tbody>
+    </table>
+    <div class="align-content-center">
+        <input type="button" value="Cerrar" @onclick="Close" class="btn btn-primary btn-sm" />
+    </div>
+</div>
+@if (isBusy)
+{
+    <div class="align-self-center busy"></div>
+}
+
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IPedidoService pedidoService
+
+@code {
+    [Parameter]
+    public string IdPedido { get; set; }
+
+    PedidoDto oPedido = new PedidoDto();
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+        isBusy = true;
+        oPedido = await pedidoService.GetItem(Int16.Parse(IdPedido));
+        isBusy = false;
+    }
+
+    private void Close()
+    {
+        navManager.NavigateTo("pedido/list");
+    }
+
+}

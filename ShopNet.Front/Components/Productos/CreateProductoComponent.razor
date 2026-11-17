@@ -1,0 +1,98 @@
+@using ShopNet.Front.Auth
+@using ShopNet.Front.Models
+@using Models;
+@using ShopNet.Front.Services.Contracts
+
+@if (oProducto != null)
+{
+    <div class="div-container-form">
+        <AlertMessageComponent Message="@message" MessageType="@messageType" />
+        <EditForm Model="oProducto" OnValidSubmit="@Create" class="col-md-8 container-form">
+            
+            <h3>Crear producto</h3>
+            
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <div>
+                    <label>Descripción</label>
+                    <InputText @bind-Value="oProducto.ProDesc" class="form-control" />
+                </div>
+                <div>
+                    <label>Valor</label>
+                    <InputNumber @bind-Value="oProducto.ProValor" class="form-control" />
+                </div>
+
+            </div>
+            <div class="d-inline-block m-2">
+                <input type="submit" value="Crear" class="btn btn-primary btn-sm" />
+                <input type="button" value="Cerrar" @onclick="Close" class="btn btn-primary btn-sm" />
+            </div>
+        </EditForm>
+    </div>
+}
+@if (isBusy)
+{
+    <div class="busy"></div>
+}
+
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject IProductoService productoService
+
+@code {
+
+    ProductoDto oProducto = new ProductoDto();
+
+    bool isBusy = false;
+    string message = string.Empty;
+    AlertMessageType messageType = AlertMessageType.Success;
+
+    protected async override Task OnInitializedAsync()
+    {
+    }
+
+    private async void Create()
+    {
+        isBusy = true;
+
+        try
+        {
+            if (oProducto.ProValor <=0)
+            {
+                messageType = AlertMessageType.Error;
+                message = "El valor debe ser mayor a cero";
+                isBusy = false;
+                return;    
+            }
+
+            var response = await httpClient.PostAsJsonAsync<ProductoDto>("/api/Producto", oProducto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                navManager.NavigateTo("/Producto/list", true);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                messageType = AlertMessageType.Error;
+                message = "No se pudo crear el producto";
+                isBusy = false;
+                return;
+            }
+        }
+        catch (Exception)
+        {
+            messageType = AlertMessageType.Error;
+            message = "No se pudo crear el producto";
+            isBusy = false;
+            return;
+        }
+
+        isBusy = false;
+    }
+
+    private void Close()
+    {
+        navManager.NavigateTo("producto/list");
+    }
+}

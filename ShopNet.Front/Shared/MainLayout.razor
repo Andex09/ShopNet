@@ -1,0 +1,18 @@
+﻿@inherits LayoutComponentBase
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+
+
+<div class="page">
+
+    <main>
+        <div class="top-row px-4">
+            <Links></Links>
+            <a href="https://www.linkedin.com/in/valeriadelgado99/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>

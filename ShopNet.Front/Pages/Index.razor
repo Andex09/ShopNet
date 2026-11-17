@@ -1,0 +1,12 @@
+@page "/"
+
+<PageTitle>ShopNet</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <ListProductoComponent/>
+    </Authorized>
+    <NotAuthorized>
+        <LoginComponent/>
+    </NotAuthorized>
+</AuthorizeView>

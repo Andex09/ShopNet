@@ -1,0 +1,13 @@
+﻿@page "/pedido/create"
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <CreatePedidoComponent />
+    </Authorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="Basic">
+    <Authorized>
+        <CreatePedidoUsuarioComponent />
+    </Authorized>
+</AuthorizeView>
