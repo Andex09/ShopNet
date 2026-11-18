@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ShopNet.Front/ShopNet.Front.csproj" />
+  <Project Path="ShopNet.Models/ShopNet.Models.csproj" />
+  <Project Path="ShopNet.WebApi/ShopNet.WebApi.csproj" />
+</Solution>
