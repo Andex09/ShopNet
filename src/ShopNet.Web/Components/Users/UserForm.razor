@@ -1,0 +1,158 @@
+@inject UserService Users
+@inject NavigationManager Navigation
+
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (isLoading)
+    {
+        <Busy />
+    }
+    else
+    {
+        <EditForm Model="form" OnValidSubmit="SaveAsync" class="col-md-8 container-form">
+            <DataAnnotationsValidator />
+
+            <h3>@(IsEdit ? "Editar usuario" : "Crear usuario")</h3>
+
+            <div class="mb-3">
+                <label class="form-label">Usuario</label>
+                <InputText @bind-Value="form.UserName" class="form-control" />
+                <ValidationMessage For="() => form.UserName" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                <InputText type="password" @bind-Value="form.Password" class="form-control" autocomplete="new-password" />
+                <ValidationMessage For="() => form.Password" />
+                @if (IsEdit)
+                {
+                    <div class="form-text">Solo se actualiza si escribes una contraseña nueva.</div>
+                }
+            </div>
+            <div class="form-check mb-3">
+                <InputCheckbox @bind-Value="form.IsAdmin" class="form-check-input" id="isAdmin" />
+                <label class="form-check-label" for="isAdmin">¿Usuario administrador?</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">@(IsEdit ? "Actualizar" : "Crear")</button>
+                @if (IsEdit)
+                {
+                    <button type="button" class="btn btn-danger btn-sm" disabled="@isBusy" @onclick="DeleteAsync">Eliminar</button>
+                }
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="Close">Cerrar</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private readonly UserFormModel form = new();
+    private bool isLoading;
+    private bool isBusy;
+    private string? message;
+
+    /// <summary>User to edit. When null, the form creates a new user.</summary>
+    [Parameter]
+    public int? UserId { get; set; }
+
+    private bool IsEdit => UserId is not null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        form.PasswordRequired = !IsEdit;
+        if (UserId is not { } id)
+        {
+            return;
+        }
+
+        isLoading = true;
+        var result = await Users.GetAsync(id);
+        if (result.Value is { } user)
+        {
+            form.UserName = user.UserName;
+            form.IsAdmin = user.Role == RoleNames.Admin;
+        }
+        else
+        {
+            message = "No se pudo consultar el usuario.";
+        }
+
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        var role = form.IsAdmin ? RoleNames.Admin : RoleNames.Basic;
+
+        var status = UserId is { } id
+            ? (await Users.UpdateAsync(id, new UpdateUserRequest
+            {
+                UserName = form.UserName,
+                Password = string.IsNullOrEmpty(form.Password) ? null : form.Password,
+                Role = role,
+            })).StatusCode
+            : (await Users.CreateAsync(new CreateUserRequest
+            {
+                UserName = form.UserName,
+                Password = form.Password ?? string.Empty,
+                Role = role,
+            })).StatusCode;
+
+        if ((int)status is >= 200 and <= 299)
+        {
+            Close();
+            return;
+        }
+
+        message = status switch
+        {
+            HttpStatusCode.Conflict => "Ya existe un usuario con ese nombre.",
+            HttpStatusCode.BadRequest => "Revisa los datos del usuario.",
+            _ => "No se pudo guardar el usuario.",
+        };
+        isBusy = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        isBusy = true;
+        var result = await Users.DeleteAsync(UserId!.Value);
+        if (result.IsSuccess)
+        {
+            Close();
+            return;
+        }
+
+        message = result.StatusCode == HttpStatusCode.Conflict
+            ? "No se puede eliminar: el usuario tiene pedidos asociados."
+            : "No se pudo eliminar el usuario.";
+        isBusy = false;
+    }
+
+    private void Close() => Navigation.NavigateTo("usuario/list");
+
+    private sealed class UserFormModel : System.ComponentModel.DataAnnotations.IValidatableObject
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "El usuario es obligatorio.")]
+        [System.ComponentModel.DataAnnotations.StringLength(50, MinimumLength = 3, ErrorMessage = "Entre 3 y 50 caracteres.")]
+        public string UserName { get; set; } = string.Empty;
+
+        public string? Password { get; set; }
+
+        public bool IsAdmin { get; set; }
+
+        public bool PasswordRequired { get; set; }
+
+        public IEnumerable<System.ComponentModel.DataAnnotations.ValidationResult> Validate(
+            System.ComponentModel.DataAnnotations.ValidationContext validationContext)
+        {
+            var hasPassword = !string.IsNullOrEmpty(Password);
+            if ((PasswordRequired && !hasPassword) || (hasPassword && Password!.Length < 8))
+            {
+                yield return new("La contraseña debe tener al menos 8 caracteres.", [nameof(Password)]);
+            }
+        }
+    }
+}

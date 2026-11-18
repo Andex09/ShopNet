@@ -1,0 +1,56 @@
+@inject AuthService Auth
+@inject SessionAuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    <EditForm Model="request" OnValidSubmit="LoginAsync" class="col-md-6 container-form">
+        <DataAnnotationsValidator />
+
+        <h3>Iniciar sesión</h3>
+
+        <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <InputText @bind-Value="request.UserName" class="form-control" autocomplete="username" />
+            <ValidationMessage For="() => request.UserName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <InputText type="password" @bind-Value="request.Password" class="form-control" autocomplete="current-password" />
+            <ValidationMessage For="() => request.Password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">Iniciar sesión</button>
+    </EditForm>
+
+    @if (isBusy)
+    {
+        <Busy />
+    }
+</div>
+
+@code {
+    private readonly LoginRequest request = new();
+    private bool isBusy;
+    private string? message;
+
+    private async Task LoginAsync()
+    {
+        isBusy = true;
+        message = null;
+
+        var result = await Auth.LoginAsync(request);
+        if (result is { IsSuccess: true, Value: not null })
+        {
+            await AuthState.SignInAsync(result.Value);
+            Navigation.NavigateTo("producto/list");
+            return;
+        }
+
+        message = result.StatusCode == HttpStatusCode.Unauthorized
+            ? "Usuario o contraseña incorrectos."
+            : "No se pudo iniciar sesión. Intenta de nuevo.";
+        isBusy = false;
+    }
+}

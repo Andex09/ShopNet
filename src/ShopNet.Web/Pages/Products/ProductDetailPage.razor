@@ -1,0 +1,11 @@
+@page "/producto/{ProductId:int}"
+@attribute [Authorize]
+
+<PageTitle>Detalle del producto</PageTitle>
+
+<ProductDetail ProductId="ProductId" />
+
+@code {
+    [Parameter]
+    public int ProductId { get; set; }
+}

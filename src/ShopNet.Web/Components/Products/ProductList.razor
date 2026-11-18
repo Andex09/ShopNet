@@ -1,0 +1,55 @@
+@inject ProductService Products
+
+<AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+@if (isBusy)
+{
+    <Busy />
+}
+else if (products.Count == 0)
+{
+    <h3>No hay productos</h3>
+}
+else
+{
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th class="text-end">Precio</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td class="text-end">@product.Price.ToString("C0")</td>
+                    <td class="text-nowrap">
+                        <a href="producto/@product.Id" title="Ver"><span class="oi oi-eye"></span></a>
+                        <AuthorizeView Roles="@RoleNames.Admin">
+                            <a href="producto/update/@product.Id" title="Editar" class="ms-3"><span class="oi oi-pencil"></span></a>
+                        </AuthorizeView>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ProductResponse> products = [];
+    private bool isBusy = true;
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Products.GetAllAsync();
+        products = result.Value ?? [];
+        message = result.IsSuccess ? null : "No se pudieron cargar los productos.";
+        isBusy = false;
+    }
+}

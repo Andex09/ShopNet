@@ -1,0 +1,35 @@
+@if (!string.IsNullOrWhiteSpace(Message) && !dismissed)
+{
+    <div class="alert @CssClass d-flex justify-content-between align-items-center" role="alert">
+        <span>@Message</span>
+        <button type="button" class="btn-close" aria-label="Cerrar" @onclick="() => dismissed = true"></button>
+    </div>
+}
+
+@code {
+    private bool dismissed;
+    private string? lastMessage;
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public AlertMessageType MessageType { get; set; } = AlertMessageType.Success;
+
+    private string CssClass => MessageType switch
+    {
+        AlertMessageType.Error => "alert-danger",
+        AlertMessageType.Warning => "alert-warning",
+        _ => "alert-success",
+    };
+
+    protected override void OnParametersSet()
+    {
+        // Show the alert again whenever a new message arrives.
+        if (Message != lastMessage)
+        {
+            dismissed = false;
+            lastMessage = Message;
+        }
+    }
+}

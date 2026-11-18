@@ -1,5 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <!-- Shared DTOs for the API and the Blazor client. No package dependencies on purpose. -->
-
-</Project>

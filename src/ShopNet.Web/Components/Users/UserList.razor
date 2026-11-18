@@ -1,0 +1,48 @@
+@inject UserService Users
+
+<AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+@if (isBusy)
+{
+    <Busy />
+}
+else if (users.Count == 0)
+{
+    <h3>No hay usuarios</h3>
+}
+else
+{
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.UserName</td>
+                    <td>@user.Role</td>
+                    <td><a href="usuario/update/@user.Id" title="Editar"><span class="oi oi-pencil"></span></a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<UserResponse> users = [];
+    private bool isBusy = true;
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Users.GetAllAsync();
+        users = result.Value ?? [];
+        message = result.IsSuccess ? null : "No se pudieron cargar los usuarios.";
+        isBusy = false;
+    }
+}

@@ -1,0 +1,52 @@
+@inject AuthService Auth
+
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="@messageType" />
+
+    <EditForm Model="request" OnValidSubmit="RegisterAsync" class="col-md-6 container-form">
+        <DataAnnotationsValidator />
+
+        <h3>Registrarse</h3>
+
+        <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <InputText @bind-Value="request.UserName" class="form-control" autocomplete="username" />
+            <ValidationMessage For="() => request.UserName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña (mínimo 8 caracteres)</label>
+            <InputText type="password" @bind-Value="request.Password" class="form-control" autocomplete="new-password" />
+            <ValidationMessage For="() => request.Password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">Crear usuario</button>
+    </EditForm>
+
+    @if (isBusy)
+    {
+        <Busy />
+    }
+</div>
+
+@code {
+    private readonly RegisterRequest request = new();
+    private bool isBusy;
+    private string? message;
+    private AlertMessageType messageType;
+
+    private async Task RegisterAsync()
+    {
+        isBusy = true;
+
+        var result = await Auth.RegisterAsync(request);
+        (messageType, message) = result.StatusCode switch
+        {
+            _ when result.IsSuccess => (AlertMessageType.Success, "Usuario creado. Ya puedes iniciar sesión."),
+            HttpStatusCode.Conflict => (AlertMessageType.Error, "Ya existe un usuario con ese nombre."),
+            HttpStatusCode.BadRequest => (AlertMessageType.Error, "Revisa los datos: el usuario solo admite letras, números, '.', '_' y '-'."),
+            _ => (AlertMessageType.Error, "No se pudo crear el usuario."),
+        };
+
+        isBusy = false;
+    }
+}

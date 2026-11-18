@@ -1,0 +1,13 @@
+@page "/"
+
+<PageTitle>ShopNet</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Productos disponibles</h1>
+        <ProductList />
+    </Authorized>
+    <NotAuthorized>
+        <LoginForm />
+    </NotAuthorized>
+</AuthorizeView>

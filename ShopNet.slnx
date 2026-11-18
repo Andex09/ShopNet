@@ -1,8 +1,4 @@
 <Solution>
-  <Folder Name="/legacy/">
-    <Project Path="ShopNet.Front/ShopNet.Front.csproj" />
-    <Project Path="ShopNet.Models/ShopNet.Models.csproj" />
-  </Folder>
   <Folder Name="/src/">
     <Project Path="src/ShopNet.Api/ShopNet.Api.csproj" />
     <Project Path="src/ShopNet.Application/ShopNet.Application.csproj" />
@@ -10,5 +6,6 @@
     <Project Path="src/ShopNet.Domain/ShopNet.Domain.csproj" />
     <Project Path="src/ShopNet.Infrastructure/ShopNet.Infrastructure.csproj" />
     <Project Path="src/ShopNet.ServiceDefaults/ShopNet.ServiceDefaults.csproj" />
+    <Project Path="src/ShopNet.Web/ShopNet.Web.csproj" />
   </Folder>
 </Solution>

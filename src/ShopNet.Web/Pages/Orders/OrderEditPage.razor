@@ -1,0 +1,11 @@
+@page "/pedido/update/{OrderId:int}"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+<PageTitle>Editar pedido</PageTitle>
+
+<OrderForm OrderId="OrderId" />
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+}
