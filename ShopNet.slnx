@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/ShopNet.Api/ShopNet.Api.csproj" />
+    <Project Path="src/ShopNet.AppHost/ShopNet.AppHost.csproj" />
     <Project Path="src/ShopNet.Application/ShopNet.Application.csproj" />
     <Project Path="src/ShopNet.Contracts/ShopNet.Contracts.csproj" />
     <Project Path="src/ShopNet.Domain/ShopNet.Domain.csproj" />
