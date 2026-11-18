@@ -54,7 +54,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     [Fact]
     public async Task Basic_user_cannot_use_admin_endpoints()
     {
-        var client = await CreateSignedInClientAsync("basic.user");
+        var client = await CreateSignedInClientAsync("customer.user");
 
         var response = await client.PostAsJsonAsync("/api/products", new ProductRequest { Name = "Hack", Price = 1 }, Ct);
 

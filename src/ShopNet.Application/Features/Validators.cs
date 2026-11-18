@@ -60,7 +60,7 @@ internal sealed class CreateUserRequestValidator : AbstractValidator<CreateUserR
     {
         RuleFor(x => x.UserName).ValidUserName();
         RuleFor(x => x.Password).ValidPassword();
-        RuleFor(x => x.Role).Must(Roles.IsValid).WithMessage($"Role must be '{Roles.Admin}' or '{Roles.Basic}'.");
+        RuleFor(x => x.Role).Must(Roles.IsValid).WithMessage($"Role must be '{Roles.Admin}' or '{Roles.Customer}'.");
     }
 }
 
@@ -70,7 +70,7 @@ internal sealed class UpdateUserRequestValidator : AbstractValidator<UpdateUserR
     {
         RuleFor(x => x.UserName).ValidUserName();
         RuleFor(x => x.Password).ValidPassword().When(x => !string.IsNullOrEmpty(x.Password));
-        RuleFor(x => x.Role).Must(Roles.IsValid).WithMessage($"Role must be '{Roles.Admin}' or '{Roles.Basic}'.");
+        RuleFor(x => x.Role).Must(Roles.IsValid).WithMessage($"Role must be '{Roles.Admin}' or '{Roles.Customer}'.");
     }
 }
 

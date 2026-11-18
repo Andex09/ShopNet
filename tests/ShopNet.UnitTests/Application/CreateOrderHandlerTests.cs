@@ -27,7 +27,7 @@ public class CreateOrderHandlerTests
             NullLogger<CreateOrderHandler>.Instance);
 
         _users.GetByIdAsync(1, Arg.Any<CancellationToken>())
-            .Returns(User.Create("ana", Roles.Basic, [1], [1]));
+            .Returns(User.Create("ana", Roles.Customer, [1], [1]));
     }
 
     [Fact]

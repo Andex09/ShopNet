@@ -16,7 +16,7 @@ public static class AuthEndpoints
                 return TypedResults.Created($"/api/users/{user.Id}", user);
             })
             .WithName("Register")
-            .WithSummary("Create an account with the Basic role.")
+            .WithSummary("Create an account with the Customer role.")
             .WithValidation<RegisterRequest>()
             .ProducesProblem(StatusCodes.Status409Conflict);
 

@@ -11,5 +11,5 @@ public sealed class CreateUserRequest
     public string Password { get; set; } = string.Empty;
 
     [Required]
-    public string Role { get; set; } = RoleNames.Basic;
+    public string Role { get; set; } = RoleNames.Customer;
 }

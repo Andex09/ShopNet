@@ -8,7 +8,7 @@ using ShopNet.Application.Common;
 
 namespace ShopNet.Application.Features.Auth;
 
-/// <summary>Self-registration. New accounts always get the Basic role.</summary>
+/// <summary>Self-registration. New accounts always get the Customer role.</summary>
 public sealed class RegisterHandler(
     IUserRepository users,
     IPasswordHasher passwordHasher,
@@ -20,7 +20,7 @@ public sealed class RegisterHandler(
         ArgumentNullException.ThrowIfNull(request);
 
         var user = await CreateUserHandler.CreateAsync(
-            users, passwordHasher, request.UserName, request.Password, Roles.Basic, cancellationToken);
+            users, passwordHasher, request.UserName, request.Password, Roles.Customer, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         logger.UserRegistered(user.Id);

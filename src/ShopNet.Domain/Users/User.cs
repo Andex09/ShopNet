@@ -9,7 +9,7 @@ public sealed class User
     private User()
     {
         UserName = string.Empty;
-        Role = Roles.Basic;
+        Role = Roles.Customer;
         PasswordHash = [];
         PasswordSalt = [];
     }

@@ -11,7 +11,7 @@ public class UserTests
     [Fact]
     public void Create_normalizes_the_user_name()
     {
-        var user = User.Create("  Valeria.D ", Roles.Basic, Hash, Salt);
+        var user = User.Create("  Valeria.D ", Roles.Customer, Hash, Salt);
 
         user.UserName.ShouldBe("valeria.d");
     }
