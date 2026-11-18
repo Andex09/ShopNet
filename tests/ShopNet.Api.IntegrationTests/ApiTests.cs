@@ -52,7 +52,7 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Basic_user_cannot_use_admin_endpoints()
+    public async Task Customer_cannot_use_admin_endpoints()
     {
         var client = await CreateSignedInClientAsync("customer.user");
 

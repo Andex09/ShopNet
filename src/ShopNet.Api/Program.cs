@@ -27,6 +27,8 @@ if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
     await app.Services.MigrateDatabaseAsync();
 }
 
+await app.Services.SeedAdminAsync();
+
 app.UseHttpsRedirection();
 app.UseCors(ApiServiceCollectionExtensions.CorsPolicyName);
 app.UseAuthentication();

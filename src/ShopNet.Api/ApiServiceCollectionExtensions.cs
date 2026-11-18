@@ -37,16 +37,21 @@ public static class ApiServiceCollectionExtensions
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
 
-        // Configured from JwtOptions, which are validated at startup. Issuer/audience validation arrives in phase 3.
+        // Configured from JwtOptions, which are validated at startup.
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
             .Configure<IOptions<JwtOptions>>((bearer, jwt) => bearer.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(jwt.Value.GetSigningKeyBytes()),
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                ValidateIssuer = true,
+                ValidIssuer = jwt.Value.Issuer,
+                ValidateAudience = true,
+                ValidAudience = jwt.Value.Audience,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromMinutes(1),
+                RequireExpirationTime = true,
+                RequireSignedTokens = true,
+                ClockSkew = TimeSpan.FromSeconds(30),
                 NameClaimType = ClaimTypes.Name,
                 RoleClaimType = ClaimTypes.Role,
             });

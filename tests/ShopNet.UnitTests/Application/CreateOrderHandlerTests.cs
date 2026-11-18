@@ -7,7 +7,6 @@ using ShopNet.Application.Features.Orders;
 using ShopNet.Contracts.Orders;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
-using ShopNet.Domain.Users;
 
 namespace ShopNet.UnitTests.Application;
 
@@ -15,7 +14,7 @@ public class CreateOrderHandlerTests
 {
     private readonly IOrderRepository _orders = Substitute.For<IOrderRepository>();
     private readonly IProductRepository _products = Substitute.For<IProductRepository>();
-    private readonly IUserRepository _users = Substitute.For<IUserRepository>();
+    private readonly IUserAccounts _users = Substitute.For<IUserAccounts>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
     private readonly CreateOrderHandler _handler;
 
@@ -26,8 +25,7 @@ public class CreateOrderHandlerTests
             Options.Create(new OrderOptions { TaxRate = 0.19m }),
             NullLogger<CreateOrderHandler>.Instance);
 
-        _users.GetByIdAsync(1, Arg.Any<CancellationToken>())
-            .Returns(User.Create("ana", Roles.Customer, [1], [1]));
+        _users.ExistsAsync(1, Arg.Any<CancellationToken>()).Returns(true);
     }
 
     [Fact]

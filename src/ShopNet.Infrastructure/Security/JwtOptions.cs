@@ -11,8 +11,16 @@ public sealed class JwtOptions
     [Required]
     public string SigningKey { get; set; } = string.Empty;
 
-    [Range(5, 1440)]
-    public int LifetimeMinutes { get; set; } = 1440;
+    /// <summary>Who issues the token (this API). Validated on every request.</summary>
+    [Required]
+    public string Issuer { get; set; } = string.Empty;
+
+    /// <summary>Who the token is for (the ShopNet clients). Validated on every request.</summary>
+    [Required]
+    public string Audience { get; set; } = string.Empty;
+
+    [Range(5, 120)]
+    public int LifetimeMinutes { get; set; } = 60;
 
     public byte[] GetSigningKeyBytes() => Encoding.UTF8.GetBytes(SigningKey);
 

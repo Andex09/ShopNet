@@ -17,10 +17,11 @@ internal static class ValidationRules
     public const int PasswordMinLength = 8;
     public const int PasswordMaxLength = 100;
     public const int UserNameMinLength = 3;
+    public const int UserNameMaxLength = 50;
 
     public static IRuleBuilderOptions<T, string> ValidUserName<T>(this IRuleBuilder<T, string> rule) =>
         rule.NotEmpty()
-            .Length(UserNameMinLength, User.UserNameMaxLength)
+            .Length(UserNameMinLength, UserNameMaxLength)
             .Matches("^[a-zA-Z0-9._-]+$").WithMessage("User name can only contain letters, digits, '.', '_' and '-'.");
 
     public static IRuleBuilderOptions<T, string?> ValidPassword<T>(this IRuleBuilder<T, string?> rule) =>
@@ -40,7 +41,7 @@ internal sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
 {
     public LoginRequestValidator()
     {
-        RuleFor(x => x.UserName).NotEmpty().MaximumLength(User.UserNameMaxLength);
+        RuleFor(x => x.UserName).NotEmpty().MaximumLength(ValidationRules.UserNameMaxLength);
         RuleFor(x => x.Password).NotEmpty().MaximumLength(ValidationRules.PasswordMaxLength);
     }
 }

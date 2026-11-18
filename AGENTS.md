@@ -36,10 +36,11 @@ solution building, tested and running.
 
 ```
 src/
-  ShopNet.Domain           Entities (Product, User, Order) and their invariants. No dependencies.
+  ShopNet.Domain           Entities (Product, Order) and their invariants, role names. No dependencies.
   ShopNet.Application      Use cases: one *Handler class per use case, grouped by feature; FluentValidation validators;
-                           ports (IProductRepository, IUnitOfWork, IPasswordHasher, ITokenService, ICurrentUser...).
-  ShopNet.Infrastructure   EF Core (ShopNetDbContext, configurations, migrations, repositories), JWT, password hashing.
+                           ports (IProductRepository, IUserAccounts, IUnitOfWork, ITokenService, ICurrentUser...).
+  ShopNet.Infrastructure   EF Core (ShopNetDbContext, configurations, migrations, repositories), ASP.NET Core Identity
+                           (users, roles, password hashing, lockout) behind IUserAccounts, JWT issuing, admin seed.
   ShopNet.Api              Minimal API endpoints per feature, global exception handler -> ProblemDetails,
                            validation endpoint filter, JWT auth, CORS, OpenAPI + Scalar.
   ShopNet.Contracts        Request/response DTOs shared by Api and Web. No dependencies.
@@ -64,10 +65,13 @@ Order amounts are always calculated by the server (`Order.Create/Change`) from t
 # Restore local tools (dotnet-ef)
 dotnet tool restore
 
-# One-time: JWT signing key (min 32 bytes) for local development
+# One-time: JWT signing key (min 32 bytes) and the seeded admin's password (min 8 characters) for local development
 dotnet user-secrets set "Jwt:SigningKey" "<random-64-byte-base64>" --project src/ShopNet.Api
+dotnet user-secrets set "Seed:Admin:Password" "<password>" --project src/ShopNet.Api
 
-# Run everything with Aspire (requires Docker): SQL Server container, API, Blazor client and the Aspire dashboard
+# Run everything with Aspire (requires Docker): SQL Server container, API, Blazor client and the Aspire dashboard.
+# The admin password is the AppHost parameter "admin-password" (asked in the dashboard, or set it once):
+dotnet user-secrets set "Parameters:admin-password" "<password>" --project src/ShopNet.AppHost
 dotnet run --project src/ShopNet.AppHost
 
 # Or run the API alone against local SQL Server Express (database ShopNetDev, migrated on startup)
@@ -86,5 +90,7 @@ URLs: API `https://localhost:7165` (Scalar at `/scalar/v1`, OpenAPI at `/openapi
 The API redirects HTTP to HTTPS. Main routes: `/api/auth/*`, `/api/products`, `/api/users` (admin), `/api/orders` (admin),
 `/api/me/orders` (signed-in user).
 
-There is no way to create the first Admin from the app yet (phase 3). Locally, register a user and promote it:
-`UPDATE Users SET Role = 'Admin' WHERE UserName = '<name>'`.
+Auth: ASP.NET Core Identity stores users and roles (`Admin`, `Customer`); passwords are PBKDF2 hashes and 5 failed
+logins lock the account for 15 minutes. The API issues its own JWT (HS256, 60 minutes, `iss`/`aud` validated).
+On startup the API creates the Admin from `Seed:Admin` (`UserName` is `admin` in Development) if no user has that name.
+Users migrated from the pre-Identity `Users` table keep their id and role but have no password: the admin sets one.
