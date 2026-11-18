@@ -1,0 +1,10 @@
+@page "/usuario/list"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+<PageTitle>Usuarios</PageTitle>
+
+<h1>Usuarios</h1>
+
+<UserList />
+
+<AddButton Href="usuario/create" Title="Crear usuario" />

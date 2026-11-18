@@ -1,0 +1,15 @@
+<div class="fab-container">
+    <a href="@Href" title="@Title" style="text-decoration: none">
+        <div class="fab fab-icon-holder">
+            <span class="oi oi-plus rounded-circle shadow-sm"></span>
+        </div>
+    </a>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Href { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? Title { get; set; }
+}

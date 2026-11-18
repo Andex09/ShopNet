@@ -1,0 +1,11 @@
+@page "/producto/update/{ProductId:int}"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+<PageTitle>Editar producto</PageTitle>
+
+<ProductForm ProductId="ProductId" />
+
+@code {
+    [Parameter]
+    public int ProductId { get; set; }
+}

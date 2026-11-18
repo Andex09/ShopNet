@@ -1,0 +1,13 @@
+@page "/logout"
+@inject SessionAuthStateProvider AuthState
+@inject NavigationManager Navigation
+
+<p>Cerrando sesión...</p>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthState.SignOutAsync();
+        Navigation.NavigateTo("/");
+    }
+}

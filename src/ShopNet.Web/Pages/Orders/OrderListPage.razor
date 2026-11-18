@@ -1,0 +1,10 @@
+@page "/pedido/list"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+<PageTitle>Pedidos</PageTitle>
+
+<h1>Pedidos</h1>
+
+<OrderList />
+
+<AddButton Href="pedido/create" Title="Crear pedido" />

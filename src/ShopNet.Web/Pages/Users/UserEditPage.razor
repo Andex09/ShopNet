@@ -1,0 +1,11 @@
+@page "/usuario/update/{UserId:int}"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+<PageTitle>Editar usuario</PageTitle>
+
+<UserForm UserId="UserId" />
+
+@code {
+    [Parameter]
+    public int UserId { get; set; }
+}

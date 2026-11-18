@@ -1,0 +1,12 @@
+@page "/producto/list"
+@attribute [Authorize]
+
+<PageTitle>Productos</PageTitle>
+
+<h1>Productos disponibles</h1>
+
+<ProductList />
+
+<AuthorizeView Roles="@RoleNames.Admin">
+    <AddButton Href="producto/create" Title="Crear producto" />
+</AuthorizeView>

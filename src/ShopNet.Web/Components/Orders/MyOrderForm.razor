@@ -1,0 +1,77 @@
+@inject OrderService Orders
+@inject ProductService Products
+@inject NavigationManager Navigation
+
+@* Basic user: order a product for themselves. The API takes the user from the token. *@
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (isLoading)
+    {
+        <Busy />
+    }
+    else
+    {
+        <EditForm Model="request" OnValidSubmit="CreateAsync" class="col-md-8 container-form">
+            <DataAnnotationsValidator />
+
+            <h3>Nuevo pedido</h3>
+
+            <div class="mb-3">
+                <label class="form-label">Producto</label>
+                <InputSelect @bind-Value="request.ProductId" class="form-select">
+                    <option value="0">Seleccione un producto</option>
+                    @foreach (var product in products)
+                    {
+                        <option value="@product.Id">@product.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => request.ProductId" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Cantidad</label>
+                <InputNumber @bind-Value="request.Quantity" class="form-control" min="1" />
+                <ValidationMessage For="() => request.Quantity" />
+            </div>
+
+            <OrderEstimateView Product="SelectedProduct" Quantity="request.Quantity" />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">Crear pedido</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="@(() => Navigation.NavigateTo("producto/list"))">Cerrar</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private readonly CreateMyOrderRequest request = new();
+    private List<ProductResponse> products = [];
+    private bool isLoading = true;
+    private bool isBusy;
+    private string? message;
+
+    private ProductResponse? SelectedProduct => products.Find(p => p.Id == request.ProductId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = (await Products.GetAllAsync()).Value ?? [];
+        isLoading = false;
+    }
+
+    private async Task CreateAsync()
+    {
+        isBusy = true;
+        var result = await Orders.CreateMineAsync(request);
+        if (result.IsSuccess)
+        {
+            Navigation.NavigateTo("pedido/mis-pedidos");
+            return;
+        }
+
+        message = result.StatusCode == HttpStatusCode.NotFound
+            ? "El producto ya no existe."
+            : "No se pudo crear el pedido.";
+        isBusy = false;
+    }
+}

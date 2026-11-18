@@ -1,0 +1,61 @@
+@* Shared table for the admin order list and "Mis pedidos". *@
+<table class="table table-hover table-bordered">
+    <thead>
+        <tr>
+            <th>#</th>
+            @if (ShowUser)
+            {
+                <th>Usuario</th>
+            }
+            <th>Producto</th>
+            <th class="text-end">Cantidad</th>
+            <th class="text-end">Total</th>
+            @if (ShowActions)
+            {
+                <th></th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var order in Orders)
+        {
+            <tr>
+                <td>@order.Id</td>
+                @if (ShowUser)
+                {
+                    <td>@Name(UserNames, order.UserId)</td>
+                }
+                <td>@Name(ProductNames, order.ProductId)</td>
+                <td class="text-end">@order.Quantity</td>
+                <td class="text-end">@order.Total.ToString("C0")</td>
+                @if (ShowActions)
+                {
+                    <td class="text-nowrap">
+                        <a href="pedido/@order.Id" title="Ver"><span class="oi oi-eye"></span></a>
+                        <a href="pedido/update/@order.Id" title="Editar" class="ms-3"><span class="oi oi-pencil"></span></a>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<OrderResponse> Orders { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyDictionary<int, string> ProductNames { get; set; } = new Dictionary<int, string>();
+
+    [Parameter]
+    public IReadOnlyDictionary<int, string> UserNames { get; set; } = new Dictionary<int, string>();
+
+    [Parameter]
+    public bool ShowUser { get; set; }
+
+    [Parameter]
+    public bool ShowActions { get; set; }
+
+    private static string Name(IReadOnlyDictionary<int, string> names, int id) =>
+        names.TryGetValue(id, out var name) ? name : $"#{id}";
+}

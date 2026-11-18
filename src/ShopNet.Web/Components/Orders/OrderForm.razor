@@ -1,0 +1,146 @@
+@inject OrderService Orders
+@inject ProductService Products
+@inject UserService Users
+@inject NavigationManager Navigation
+
+@* Admin: create an order for any user, or edit product/quantity of an existing order. *@
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (isLoading)
+    {
+        <Busy />
+    }
+    else
+    {
+        <EditForm Model="form" OnValidSubmit="SaveAsync" class="col-md-8 container-form">
+            <DataAnnotationsValidator />
+
+            <h3>@(IsEdit ? $"Editar pedido #{OrderId}" : "Crear pedido")</h3>
+
+            @if (!IsEdit)
+            {
+                <div class="mb-3">
+                    <label class="form-label">Usuario</label>
+                    <InputSelect @bind-Value="form.UserId" class="form-select">
+                        <option value="0">Seleccione un usuario</option>
+                        @foreach (var user in users)
+                        {
+                            <option value="@user.Id">@user.UserName</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => form.UserId" />
+                </div>
+            }
+            <div class="mb-3">
+                <label class="form-label">Producto</label>
+                <InputSelect @bind-Value="form.ProductId" class="form-select">
+                    <option value="0">Seleccione un producto</option>
+                    @foreach (var product in products)
+                    {
+                        <option value="@product.Id">@product.Name</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => form.ProductId" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Cantidad</label>
+                <InputNumber @bind-Value="form.Quantity" class="form-control" min="1" />
+                <ValidationMessage For="() => form.Quantity" />
+            </div>
+
+            <OrderEstimateView Product="SelectedProduct" Quantity="form.Quantity" />
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">@(IsEdit ? "Actualizar" : "Crear")</button>
+                @if (IsEdit)
+                {
+                    <button type="button" class="btn btn-danger btn-sm" disabled="@isBusy" @onclick="DeleteAsync">Eliminar</button>
+                }
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="Close">Cerrar</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private readonly CreateOrderRequest form = new();
+    private List<ProductResponse> products = [];
+    private List<UserResponse> users = [];
+    private bool isLoading = true;
+    private bool isBusy;
+    private string? message;
+
+    /// <summary>Order to edit. When null, the form creates a new order.</summary>
+    [Parameter]
+    public int? OrderId { get; set; }
+
+    private bool IsEdit => OrderId is not null;
+
+    private ProductResponse? SelectedProduct => products.Find(p => p.Id == form.ProductId);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+        products = (await Products.GetAllAsync()).Value ?? [];
+
+        if (OrderId is { } id)
+        {
+            var result = await Orders.GetAsync(id);
+            if (result.Value is { } order)
+            {
+                form.UserId = order.UserId;
+                form.ProductId = order.ProductId;
+                form.Quantity = order.Quantity;
+            }
+            else
+            {
+                message = "No se pudo consultar el pedido.";
+            }
+        }
+        else
+        {
+            users = (await Users.GetAllAsync()).Value ?? [];
+        }
+
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        var status = OrderId is { } id
+            ? (await Orders.UpdateAsync(id, new UpdateOrderRequest { ProductId = form.ProductId, Quantity = form.Quantity })).StatusCode
+            : (await Orders.CreateAsync(form)).StatusCode;
+
+        if ((int)status is >= 200 and <= 299)
+        {
+            Close();
+            return;
+        }
+
+        message = status switch
+        {
+            HttpStatusCode.NotFound => "El usuario o el producto ya no existe.",
+            HttpStatusCode.BadRequest => "Revisa los datos del pedido.",
+            _ => "No se pudo guardar el pedido.",
+        };
+        isBusy = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        isBusy = true;
+        var result = await Orders.DeleteAsync(OrderId!.Value);
+        if (result.IsSuccess)
+        {
+            Close();
+            return;
+        }
+
+        message = "No se pudo eliminar el pedido.";
+        isBusy = false;
+    }
+
+    private void Close() => Navigation.NavigateTo("pedido/list");
+}

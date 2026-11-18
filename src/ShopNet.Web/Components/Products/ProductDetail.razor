@@ -1,0 +1,48 @@
+@inject ProductService Products
+@inject NavigationManager Navigation
+
+<div class="container-fluid" style="max-width: 40rem">
+    <h3>Detalle del producto</h3>
+
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (product is null)
+    {
+        @if (message is null)
+        {
+            <Busy />
+        }
+    }
+    else
+    {
+        <table class="table table-borderless">
+            <tbody>
+                <tr><th>ID</th><td>@product.Id</td></tr>
+                <tr><th>Nombre</th><td>@product.Name</td></tr>
+                <tr><th>Precio</th><td>@product.Price.ToString("C0")</td></tr>
+            </tbody>
+        </table>
+    }
+
+    <button type="button" class="btn btn-secondary btn-sm" @onclick="@(() => Navigation.NavigateTo("producto/list"))">Cerrar</button>
+</div>
+
+@code {
+    private ProductResponse? product;
+    private string? message;
+
+    [Parameter, EditorRequired]
+    public int ProductId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var result = await Products.GetAsync(ProductId);
+        product = result.Value;
+        message = result.StatusCode switch
+        {
+            _ when result.IsSuccess => null,
+            HttpStatusCode.NotFound => "El producto no existe.",
+            _ => "No se pudo consultar el producto.",
+        };
+    }
+}

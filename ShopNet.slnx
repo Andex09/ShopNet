@@ -1,5 +1,22 @@
 <Solution>
-  <Project Path="ShopNet.Front/ShopNet.Front.csproj" />
-  <Project Path="ShopNet.Models/ShopNet.Models.csproj" />
-  <Project Path="ShopNet.WebApi/ShopNet.WebApi.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/ShopNet.Api/ShopNet.Api.csproj" />
+    <Project Path="src/ShopNet.AppHost/ShopNet.AppHost.csproj" />
+    <Project Path="src/ShopNet.Application/ShopNet.Application.csproj" />
+    <Project Path="src/ShopNet.Contracts/ShopNet.Contracts.csproj" />
+    <Project Path="src/ShopNet.Domain/ShopNet.Domain.csproj" />
+    <Project Path="src/ShopNet.Infrastructure/ShopNet.Infrastructure.csproj" />
+    <Project Path="src/ShopNet.ServiceDefaults/ShopNet.ServiceDefaults.csproj" />
+    <Project Path="src/ShopNet.Web/ShopNet.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShopNet.Api.IntegrationTests/ShopNet.Api.IntegrationTests.csproj" />
+    <Project Path="tests/ShopNet.UnitTests/ShopNet.UnitTests.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
 </Solution>

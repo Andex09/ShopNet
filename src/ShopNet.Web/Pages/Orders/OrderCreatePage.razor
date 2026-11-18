@@ -1,0 +1,13 @@
+@page "/pedido/create"
+@attribute [Authorize]
+
+<PageTitle>Crear pedido</PageTitle>
+
+<AuthorizeView Roles="@RoleNames.Admin">
+    <Authorized>
+        <OrderForm />
+    </Authorized>
+    <NotAuthorized>
+        <MyOrderForm />
+    </NotAuthorized>
+</AuthorizeView>

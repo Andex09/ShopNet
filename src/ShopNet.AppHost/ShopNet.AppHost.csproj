@@ -1,0 +1,20 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+
+  <!-- Local development orchestration only: SQL Server container + API + Blazor client. Azure is provisioned with Terraform. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>shopnet-apphost</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ShopNet.Api\ShopNet.Api.csproj" />
+    <ProjectReference Include="..\ShopNet.Web\ShopNet.Web.csproj" />
+  </ItemGroup>
+
+</Project>

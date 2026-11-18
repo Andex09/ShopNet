@@ -1,0 +1,109 @@
+@inject ProductService Products
+@inject NavigationManager Navigation
+
+<div class="div-container-form">
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (isLoading)
+    {
+        <Busy />
+    }
+    else
+    {
+        <EditForm Model="request" OnValidSubmit="SaveAsync" class="col-md-8 container-form">
+            <DataAnnotationsValidator />
+
+            <h3>@(IsEdit ? "Editar producto" : "Crear producto")</h3>
+
+            <div class="mb-3">
+                <label class="form-label">Nombre</label>
+                <InputText @bind-Value="request.Name" class="form-control" />
+                <ValidationMessage For="() => request.Name" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Precio</label>
+                <InputNumber @bind-Value="request.Price" class="form-control" />
+                <ValidationMessage For="() => request.Price" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">@(IsEdit ? "Actualizar" : "Crear")</button>
+                @if (IsEdit)
+                {
+                    <button type="button" class="btn btn-danger btn-sm" disabled="@isBusy" @onclick="DeleteAsync">Eliminar</button>
+                }
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="Close">Cerrar</button>
+            </div>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private readonly ProductRequest request = new();
+    private bool isLoading;
+    private bool isBusy;
+    private string? message;
+
+    /// <summary>Product to edit. When null, the form creates a new product.</summary>
+    [Parameter]
+    public int? ProductId { get; set; }
+
+    private bool IsEdit => ProductId is not null;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ProductId is not { } id)
+        {
+            return;
+        }
+
+        isLoading = true;
+        var result = await Products.GetAsync(id);
+        if (result.Value is { } product)
+        {
+            request.Name = product.Name;
+            request.Price = product.Price;
+        }
+        else
+        {
+            message = "No se pudo consultar el producto.";
+        }
+
+        isLoading = false;
+    }
+
+    private async Task SaveAsync()
+    {
+        isBusy = true;
+        var success = ProductId is { } id
+            ? (await Products.UpdateAsync(id, request)).IsSuccess
+            : (await Products.CreateAsync(request)).IsSuccess;
+
+        if (success)
+        {
+            Close();
+            return;
+        }
+
+        message = IsEdit ? "No se pudo actualizar el producto." : "No se pudo crear el producto.";
+        isBusy = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        isBusy = true;
+        var result = await Products.DeleteAsync(ProductId!.Value);
+        if (result.IsSuccess)
+        {
+            Close();
+            return;
+        }
+
+        message = result.StatusCode == HttpStatusCode.Conflict
+            ? "No se puede eliminar: el producto tiene pedidos asociados."
+            : "No se pudo eliminar el producto.";
+        isBusy = false;
+    }
+
+    private void Close() => Navigation.NavigateTo("producto/list");
+}
