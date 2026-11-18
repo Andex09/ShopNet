@@ -2,9 +2,9 @@
   <Folder Name="/legacy/">
     <Project Path="ShopNet.Front/ShopNet.Front.csproj" />
     <Project Path="ShopNet.Models/ShopNet.Models.csproj" />
-    <Project Path="ShopNet.WebApi/ShopNet.WebApi.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/ShopNet.Api/ShopNet.Api.csproj" />
     <Project Path="src/ShopNet.Application/ShopNet.Application.csproj" />
     <Project Path="src/ShopNet.Contracts/ShopNet.Contracts.csproj" />
     <Project Path="src/ShopNet.Domain/ShopNet.Domain.csproj" />
