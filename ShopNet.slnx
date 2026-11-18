@@ -8,5 +8,7 @@
     <Project Path="src/ShopNet.Application/ShopNet.Application.csproj" />
     <Project Path="src/ShopNet.Contracts/ShopNet.Contracts.csproj" />
     <Project Path="src/ShopNet.Domain/ShopNet.Domain.csproj" />
+    <Project Path="src/ShopNet.Infrastructure/ShopNet.Infrastructure.csproj" />
+    <Project Path="src/ShopNet.ServiceDefaults/ShopNet.ServiceDefaults.csproj" />
   </Folder>
 </Solution>
