@@ -9,4 +9,8 @@
     <Project Path="src/ShopNet.ServiceDefaults/ShopNet.ServiceDefaults.csproj" />
     <Project Path="src/ShopNet.Web/ShopNet.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ShopNet.Api.IntegrationTests/ShopNet.Api.IntegrationTests.csproj" />
+    <Project Path="tests/ShopNet.UnitTests/ShopNet.UnitTests.csproj" />
+  </Folder>
 </Solution>
