@@ -14,7 +14,7 @@ solution building, tested and running.
 | 0 | Git baseline (`v2022-original`) | Done |
 | 1 | .NET 10, central package management, OpenAPI + Scalar, secrets out of config | Done |
 | 2 | Clean Architecture, Minimal APIs, ProblemDetails, FluentValidation, OpenTelemetry, health checks, Aspire, test projects | Done |
-| 3 | ASP.NET Core Identity, hardened JWT (iss/aud), admin seed, rate limiting | Pending |
+| 3 | ASP.NET Core Identity, hardened JWT (iss/aud), admin seed, rate limiting | Done |
 | 4 | Orders with multiple lines, realistic catalog seed | Pending |
 | 5 | Full test coverage, CI | Pending |
 | 6 | AI: semantic search, similar products, recommendations (Azure OpenAI embeddings + Azure SQL `VECTOR`) | Pending |
@@ -42,14 +42,17 @@ src/
   ShopNet.Infrastructure   EF Core (ShopNetDbContext, configurations, migrations, repositories), ASP.NET Core Identity
                            (users, roles, password hashing, lockout) behind IUserAccounts, JWT issuing, admin seed.
   ShopNet.Api              Minimal API endpoints per feature, global exception handler -> ProblemDetails,
-                           validation endpoint filter, JWT auth, CORS, OpenAPI + Scalar.
+                           validation endpoint filter, JWT auth, CORS, auth rate limiting, OpenAPI + Scalar.
   ShopNet.Contracts        Request/response DTOs shared by Api and Web. No dependencies.
   ShopNet.Web              Blazor WebAssembly client (UI in Spanish). ApiClient + typed services; no HttpClient in components.
+                           The session is the JWT (claims read by UserSession); BearerTokenHandler adds it to every
+                           request and ends the session on 401 or when the token expires.
   ShopNet.ServiceDefaults  OpenTelemetry, health checks (/health/live, /health/ready), resilience.
   ShopNet.AppHost          .NET Aspire, local development only (SQL Server 2025 container + Api + Web).
 tests/
-  ShopNet.UnitTests                 Domain + Application (xUnit v3, NSubstitute, Shouldly).
-  ShopNet.Api.IntegrationTests      WebApplicationFactory + Testcontainers (SQL Server 2025). Requires Docker.
+  ShopNet.UnitTests                 Domain, Application, JWT issuing and the client UserSession (xUnit v3, NSubstitute, Shouldly).
+  ShopNet.Api.IntegrationTests      WebApplicationFactory + Testcontainers (SQL Server 2025). Requires Docker. All classes share
+                                    one API and container ([Collection(SharedApi.Name)]); use unique user names (TestUsers).
 ```
 
 Dependencies point inwards: Api → Application/Infrastructure → Domain. Endpoints never touch the DbContext.
