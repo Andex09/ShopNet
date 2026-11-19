@@ -21,19 +21,21 @@
         @foreach (var order in Orders)
         {
             <tr>
-                <td>@order.Id</td>
+                <td><a href="@DetailHref(order.Id)">@order.Id</a></td>
                 <td class="text-nowrap">@order.CreatedAt.ToLocalTime().ToString("g")</td>
                 @if (ShowUser)
                 {
                     <td>@(UserNames.TryGetValue(order.UserId, out var name) ? name : $"#{order.UserId}")</td>
                 }
                 <td>@Summary(order)</td>
-                <td><OrderStatusBadge Status="@order.Status" /></td>
+                <td>
+                    <OrderStatusBadge Status="@order.Status" />
+                </td>
                 <td class="text-end">@order.Total.ToString("C0")</td>
                 @if (ShowActions)
                 {
                     <td class="text-nowrap">
-                        <a href="pedido/@order.Id" title="Ver"><span class="oi oi-eye"></span></a>
+                        <a href="@DetailHref(order.Id)" title="Ver"><span class="oi oi-eye"></span></a>
                         <a href="pedido/update/@order.Id" title="Editar" class="ms-3"><span class="oi oi-pencil"></span></a>
                     </td>
                 }
@@ -48,6 +50,9 @@
 
     [Parameter]
     public IReadOnlyDictionary<int, string> UserNames { get; set; } = new Dictionary<int, string>();
+
+    [Parameter]
+    public Func<int, string> DetailHref { get; set; } = id => $"pedido/{id}";
 
     [Parameter]
     public bool ShowUser { get; set; }

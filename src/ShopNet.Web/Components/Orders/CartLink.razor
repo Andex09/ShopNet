@@ -1,0 +1,22 @@
+@implements IDisposable
+@inject CartService Cart
+
+<a href="carrito" class="nav-link btn btn-link">
+    Carrito
+    @if (Cart.Count > 0)
+    {
+        <span class="badge rounded-pill text-bg-primary">@Cart.Count</span>
+    }
+</a>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Cart.Changed += OnCartChanged;
+        await Cart.LoadAsync();
+    }
+
+    private void OnCartChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Cart.Changed -= OnCartChanged;
+}

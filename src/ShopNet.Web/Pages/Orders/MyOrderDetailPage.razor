@@ -1,0 +1,11 @@
+@page "/pedido/mis-pedidos/{OrderId:int}"
+@attribute [Authorize]
+
+<PageTitle>Mi pedido</PageTitle>
+
+<MyOrderDetail OrderId="OrderId" />
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+}

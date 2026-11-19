@@ -1,0 +1,141 @@
+@inject CartService Cart
+@inject ProductService Products
+@inject OrderService Orders
+@inject NavigationManager Navigation
+
+<AlertMessage Message="@message" MessageType="@messageType" />
+
+@if (isLoading)
+{
+    <Busy />
+}
+else if (Cart.Items.Count == 0)
+{
+    <p>Tu carrito está vacío. <a href="producto/list">Ver productos</a></p>
+}
+else
+{
+    <table class="table table-sm align-middle">
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="text-end">Valor unitario</th>
+                <th style="width: 7rem">Cantidad</th>
+                <th class="text-end">Valor</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Cart.Items)
+            {
+                var available = !unavailable.Contains(item.ProductId);
+                <tr class="@(available ? null : "text-body-secondary")">
+                    <td>
+                        @item.ProductName
+                        @if (!available)
+                        {
+                            <span class="badge text-bg-secondary ms-2">No disponible</span>
+                        }
+                    </td>
+                    <td class="text-end">@item.UnitPrice.ToString("C0")</td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" min="1" max="@CartService.MaxQuantity"
+                               value="@item.Quantity" disabled="@(!available || isBusy)"
+                               @onchange="e => Cart.SetQuantityAsync(item.ProductId, int.TryParse(e.Value?.ToString(), out var quantity) ? quantity : 1)" />
+                    </td>
+                    <td class="text-end">@OrderEstimate.LineTotal(item.UnitPrice, item.Quantity).ToString("C0")</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm" title="Quitar" disabled="@isBusy"
+                                @onclick="() => RemoveAsync(item.ProductId)">
+                            <span class="oi oi-trash"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    var (subtotal, tax, total) = OrderEstimate.Calculate(Cart.Items.Select(i => (i.UnitPrice, i.Quantity)));
+    <table class="table table-sm w-auto">
+        <tbody>
+            <tr><th>Subtotal</th><td class="text-end">@subtotal.ToString("C0")</td></tr>
+            <tr><th>IVA (@OrderEstimate.TaxRate.ToString("P0"))</th><td class="text-end">@tax.ToString("C0")</td></tr>
+            <tr><th>Total estimado</th><td class="text-end"><strong>@total.ToString("C0")</strong></td></tr>
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm" disabled="@(isBusy || unavailable.Count > 0)" @onclick="PlaceOrderAsync">
+            Confirmar pedido
+        </button>
+        <a href="producto/list" class="btn btn-secondary btn-sm">Seguir comprando</a>
+        <button type="button" class="btn btn-outline-danger btn-sm ms-auto" disabled="@isBusy" @onclick="Cart.ClearAsync">Vaciar carrito</button>
+    </div>
+}
+
+@code {
+    private HashSet<int> unavailable = [];
+    private bool isLoading = true;
+    private bool isBusy;
+    private string? message;
+    private AlertMessageType messageType = AlertMessageType.Error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Cart.LoadAsync();
+        await RefreshAsync();
+        isLoading = false;
+    }
+
+    /// <summary>Prices and availability come from the catalog, not from what was stored when the item was added.</summary>
+    private async Task RefreshAsync()
+    {
+        var catalog = await Products.GetAllAsync();
+        if (catalog.Value is null)
+        {
+            return;
+        }
+
+        unavailable = [.. await Cart.RefreshAsync(catalog.Value)];
+        if (unavailable.Count > 0)
+        {
+            (messageType, message) = (AlertMessageType.Warning, "Algunos productos ya no están disponibles. Quítalos para continuar.");
+        }
+    }
+
+    private async Task RemoveAsync(int productId)
+    {
+        await Cart.RemoveAsync(productId);
+        if (unavailable.Remove(productId) && unavailable.Count == 0)
+        {
+            message = null;
+        }
+    }
+
+    private async Task PlaceOrderAsync()
+    {
+        isBusy = true;
+        message = null;
+
+        var result = await Orders.CreateMineAsync(Cart.ToOrderRequest());
+        if (result is { IsSuccess: true, Value: { } order })
+        {
+            await Cart.ClearAsync();
+            Navigation.NavigateTo($"pedido/mis-pedidos/{order.Id}");
+            return;
+        }
+
+        if (result.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound)
+        {
+            // A product was deactivated or removed after the page loaded.
+            await RefreshAsync();
+        }
+
+        if (message is null)
+        {
+            (messageType, message) = (AlertMessageType.Error, "No se pudo crear el pedido. Intenta de nuevo.");
+        }
+
+        isBusy = false;
+    }
+}

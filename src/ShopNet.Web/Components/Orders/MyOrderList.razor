@@ -12,7 +12,7 @@ else if (orders.Count == 0)
 }
 else
 {
-    <OrderTable Orders="orders" />
+    <OrderTable Orders="orders" DetailHref="@(id => $"pedido/mis-pedidos/{id}")" />
 }
 
 @code {

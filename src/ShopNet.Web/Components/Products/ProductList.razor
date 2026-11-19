@@ -1,5 +1,6 @@
 @inject ProductService Products
 @inject CategoryService Categories
+@inject CartService Cart
 
 <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
 
@@ -48,9 +49,20 @@ else
                     <td class="text-end">@product.Price.ToString("C0")</td>
                     <td class="text-nowrap">
                         <a href="producto/@product.Id" title="Ver"><span class="oi oi-eye"></span></a>
-                        <AuthorizeView Roles="@RoleNames.Admin">
+                        @* Roles are checked once in OnInitializedAsync, not with an AuthorizeView per row. *@
+                        @if (isAdmin)
+                        {
                             <a href="producto/update/@product.Id" title="Editar" class="ms-3"><span class="oi oi-pencil"></span></a>
-                        </AuthorizeView>
+                        }
+                        else if (isCustomer)
+                        {
+                            <button type="button" class="btn btn-outline-primary btn-sm ms-3" disabled="@(!product.IsActive)"
+                                    @onclick="() => AddToCartAsync(product)">Agregar al carrito</button>
+                            @if (lastAdded == product.Id)
+                            {
+                                <span class="text-success small ms-2">Agregado</span>
+                            }
+                        }
                     </td>
                 </tr>
             }
@@ -62,7 +74,9 @@ else
     private List<ProductResponse> products = [];
     private List<CategoryResponse> categories = [];
     private int? categoryId;
+    private int? lastAdded;
     private bool isAdmin;
+    private bool isCustomer;
     private bool isBusy = true;
     private string? message;
 
@@ -73,7 +87,9 @@ else
     {
         if (AuthenticationState is not null)
         {
-            isAdmin = (await AuthenticationState).User.IsInRole(RoleNames.Admin);
+            var user = (await AuthenticationState).User;
+            isAdmin = user.IsInRole(RoleNames.Admin);
+            isCustomer = user.IsInRole(RoleNames.Customer);
         }
 
         categories = (await Categories.GetAllAsync()).Value ?? [];
@@ -84,6 +100,12 @@ else
     {
         categoryId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
         await LoadAsync();
+    }
+
+    private async Task AddToCartAsync(ProductResponse product)
+    {
+        await Cart.AddAsync(product);
+        lastAdded = product.Id;
     }
 
     private async Task LoadAsync()
