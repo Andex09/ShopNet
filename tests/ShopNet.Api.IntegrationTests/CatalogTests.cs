@@ -101,6 +101,7 @@ public class CatalogTests(ApiFactory factory)
         created.StatusCode.ShouldBe(HttpStatusCode.Created);
         var category = await created.Content.ReadFromJsonAsync<CategoryResponse>(Ct);
         category.ShouldNotBeNull();
+        (await admin.GetFromJsonAsync<CategoryResponse>($"/api/categories/{category.Id}", Ct)).ShouldBe(category);
 
         (await admin.PostAsJsonAsync("/api/categories", new CategoryRequest { Name = name }, Ct)).StatusCode.ShouldBe(HttpStatusCode.Conflict);
         (await admin.PutAsJsonAsync($"/api/categories/{category.Id}", new CategoryRequest { Name = name + " 2" }, Ct))
@@ -118,6 +119,42 @@ public class CatalogTests(ApiFactory factory)
             new ProductRequest { Name = "Sin categoría", Price = 1_000m, CategoryId = 9999 }, Ct);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Updating_a_product_prices_new_orders_but_not_past_ones()
+    {
+        var admin = await factory.CreateAdminClientAsync();
+        var customer = await factory.CreateCustomerClientAsync();
+        var product = await CreateProductAsync(admin, "Producto que sube de precio");
+        var before = await customer.PostAsJsonAsync("/api/me/orders", TestOrders.Of(product.Id, 1), Ct);
+        var pastOrder = (await before.Content.ReadFromJsonAsync<OrderResponse>(Ct)).ShouldNotBeNull();
+
+        (await admin.PutAsJsonAsync($"/api/products/{product.Id}", new ProductRequest
+        {
+            Name = "Producto actualizado", Description = "Nueva descripción.", Price = 12_500m, CategoryId = 1,
+        }, Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var updated = await admin.GetFromJsonAsync<ProductResponse>($"/api/products/{product.Id}", Ct);
+        updated.ShouldBe(new ProductResponse(product.Id, "Producto actualizado", "Nueva descripción.", 12_500m, 1, "Audio", true));
+        var after = await customer.PostAsJsonAsync("/api/me/orders", TestOrders.Of(product.Id, 1), Ct);
+        (await after.Content.ReadFromJsonAsync<OrderResponse>(Ct)).ShouldNotBeNull().Lines[0].UnitPrice.ShouldBe(12_500m);
+        var past = await customer.GetFromJsonAsync<OrderResponse>($"/api/me/orders/{pastOrder.Id}", Ct);
+        past.ShouldNotBeNull().Lines[0].ShouldBe(new OrderLineResponse(product.Id, product.Name, 10_000m, 1, 10_000m));
+    }
+
+    [Fact]
+    public async Task A_missing_product_or_category_is_not_found()
+    {
+        var admin = await factory.CreateAdminClientAsync();
+        var product = new ProductRequest { Name = "Fantasma", Price = 1_000m, CategoryId = 8 };
+
+        (await admin.PutAsJsonAsync("/api/products/999999", product, Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await admin.DeleteAsync("/api/products/999999", Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await admin.GetAsync("/api/categories/999999", Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await admin.PutAsJsonAsync("/api/categories/999999", new CategoryRequest { Name = "Fantasma" }, Ct))
+            .StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await admin.DeleteAsync("/api/categories/999999", Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     private static async Task<ProductResponse> CreateProductAsync(HttpClient admin, string name, bool isActive = true)
