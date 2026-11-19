@@ -6,6 +6,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ShopNet.Application\ShopNet.Application.csproj" />
+    <ProjectReference Include="..\..\src\ShopNet.Infrastructure\ShopNet.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ShopNet.Web\ShopNet.Web.csproj" />
   </ItemGroup>
 
 </Project>

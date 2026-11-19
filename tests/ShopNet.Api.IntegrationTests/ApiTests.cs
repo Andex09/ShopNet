@@ -1,14 +1,13 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ShopNet.Contracts.Auth;
 using ShopNet.Contracts.Orders;
-using ShopNet.Contracts.Products;
 
 namespace ShopNet.Api.IntegrationTests;
 
-public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
+[Collection(SharedApi.Name)]
+public class ApiTests(ApiFactory factory)
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -42,29 +41,9 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
     }
 
     [Fact]
-    public async Task Anonymous_requests_are_rejected()
-    {
-        var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/api/products", Ct);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-    }
-
-    [Fact]
-    public async Task Customer_cannot_use_admin_endpoints()
-    {
-        var client = await CreateSignedInClientAsync("customer.user");
-
-        var response = await client.PostAsJsonAsync("/api/products", new ProductRequest { Name = "Hack", Price = 1 }, Ct);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-    }
-
-    [Fact]
     public async Task Order_totals_are_calculated_by_the_server()
     {
-        var client = await CreateSignedInClientAsync("buyer");
+        var client = await factory.CreateCustomerClientAsync("buyer");
 
         // Seeded product 2: "Mx 3 Mouse", 350.000. Tax 19%.
         var response = await client.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 2, Quantity = 2 }, Ct);
@@ -76,16 +55,12 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         order.Subtotal.ShouldBe(700_000m);
         order.Tax.ShouldBe(133_000m);
         order.Total.ShouldBe(833_000m);
-
-        var mine = await client.GetFromJsonAsync<List<OrderResponse>>("/api/me/orders", Ct);
-        mine.ShouldNotBeNull();
-        mine.ShouldContain(o => o.Id == order.Id);
     }
 
     [Fact]
     public async Task Unknown_product_returns_problem_details_without_internal_details()
     {
-        var client = await CreateSignedInClientAsync("lost.buyer");
+        var client = await factory.CreateCustomerClientAsync("lost.buyer");
 
         var response = await client.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 999, Quantity = 1 }, Ct);
 
@@ -94,21 +69,5 @@ public class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         body.ShouldContain("traceId");
         body.ShouldNotContain("Exception");
         body.ShouldNotContain(" at ShopNet.");
-    }
-
-    private async Task<HttpClient> CreateSignedInClientAsync(string userName)
-    {
-        var client = factory.CreateClient();
-        const string password = "Test-password-1";
-
-        var register = await client.PostAsJsonAsync("/api/auth/register", new RegisterRequest { UserName = userName, Password = password }, Ct);
-        register.StatusCode.ShouldBe(HttpStatusCode.Created);
-
-        var login = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest { UserName = userName, Password = password }, Ct);
-        login.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var session = await login.Content.ReadFromJsonAsync<LoginResponse>(Ct);
-
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session!.Token);
-        return client;
     }
 }
