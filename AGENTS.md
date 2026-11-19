@@ -16,7 +16,7 @@ solution building, tested and running.
 | 2 | Clean Architecture, Minimal APIs, ProblemDetails, FluentValidation, OpenTelemetry, health checks, Aspire, test projects | Done |
 | 3 | ASP.NET Core Identity, hardened JWT (iss/aud), admin seed, rate limiting | Done |
 | 4 | Orders with multiple lines and states, categories, technology catalog seed, customer cart | Done |
-| 5 | Full test coverage, CI | Pending |
+| 5 | Test coverage, CI (GitHub Actions: build, tests, coverage report) | Done |
 | 6 | AI: semantic search, similar products, recommendations (Azure OpenAI embeddings + Azure SQL `VECTOR`) | Pending |
 | 7 | Terraform (azurerm): Container Apps, Azure SQL, Static Web Apps, Key Vault, AI Foundry | Pending |
 | 8 | GitHub Actions CI/CD with OIDC | Pending |
@@ -53,7 +53,12 @@ tests/
   ShopNet.UnitTests                 Domain, Application, JWT issuing and the client UserSession (xUnit v3, NSubstitute, Shouldly).
   ShopNet.Api.IntegrationTests      WebApplicationFactory + Testcontainers (SQL Server 2025). Requires Docker. All classes share
                                     one API and container ([Collection(SharedApi.Name)]); use unique user names (TestUsers).
+                                    A test that needs other settings or services gets its own host (factory.WithWebHostBuilder).
+.github/workflows/ci.yml   On pull requests and pushes to main: Release build, all tests, coverage summary + report artifact.
 ```
+
+Tests: one class per file, named `<Subject>Tests`, methods named as the behaviour (`Someone_elses_order_is_not_found`).
+Every change comes with tests; there is no coverage target, but coverage should not drop (it is about 95% of lines).
 
 Dependencies point inwards: Api → Application/Infrastructure → Domain. Endpoints never touch the DbContext.
 Expected errors are exceptions (`NotFoundException` 404, `ConflictException` 409, `DomainException` 400) translated by
@@ -70,7 +75,7 @@ not `HasData`; migrations that change existing data are written by hand so data 
 ## Commands
 
 ```bash
-# Restore local tools (dotnet-ef)
+# Restore local tools (dotnet-ef, reportgenerator)
 dotnet tool restore
 
 # One-time: JWT signing key (min 32 bytes) and the seeded admin's password (min 8 characters) for local development
@@ -89,6 +94,10 @@ dotnet run --project src/ShopNet.Web
 # Build and test (integration tests require Docker)
 dotnet build ShopNet.slnx
 dotnet test --solution ShopNet.slnx
+
+# With code coverage (the settings path must be absolute: it is resolved from each test project's folder)
+dotnet test --solution ShopNet.slnx --coverage --coverage-settings "$PWD/tests/coverage.settings.xml" --results-directory TestResults
+dotnet reportgenerator -reports:"TestResults/*.cobertura.xml" -targetdir:TestResults/coverage -reporttypes:"TextSummary;Html"
 
 # Add an EF Core migration
 dotnet ef migrations add <Name> --project src/ShopNet.Infrastructure --output-dir Persistence/Migrations

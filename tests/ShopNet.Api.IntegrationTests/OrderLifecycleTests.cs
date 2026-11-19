@@ -91,6 +91,20 @@ public class OrderLifecycleTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task The_admin_cancels_a_pending_order_and_then_it_cannot_be_confirmed()
+    {
+        var admin = await factory.CreateAdminClientAsync();
+        var customer = await factory.CreateCustomerClientAsync();
+        var order = await PlaceAsync(customer, (Mouse, 1));
+
+        (await admin.PostAsync($"/api/orders/{order.Id}/cancel", null, Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        (await StatusOfAsync(customer, order.Id)).ShouldBe(OrderStatusNames.Cancelled);
+        (await admin.PostAsync($"/api/orders/{order.Id}/confirm", null, Ct)).StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        (await admin.PostAsync("/api/orders/999999/cancel", null, Ct)).StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task A_customer_cancels_their_own_pending_order_once()
     {
         var customer = await factory.CreateCustomerClientAsync();
