@@ -26,5 +26,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseSetting("ConnectionStrings:shopnet", _sql.GetConnectionString());
         builder.UseSetting("Jwt:SigningKey", "integration-tests-only-signing-key-0123456789abcdef");
         builder.UseSetting("Database:MigrateOnStartup", "true");
+
+        // TestServer has no remote IP, so every test client shares one rate-limit partition: raise the limit.
+        builder.UseSetting("RateLimiting:Auth:PermitLimit", "10000");
     }
 }

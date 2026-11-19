@@ -28,6 +28,7 @@ public static class ApiServiceCollectionExtensions
 
         AddAuth(services);
         AddCors(services, configuration);
+        services.AddAuthRateLimiting(configuration);
         AddOpenApi(services);
 
         return services;

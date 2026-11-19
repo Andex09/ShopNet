@@ -31,6 +31,7 @@ await app.Services.SeedAdminAsync();
 
 app.UseHttpsRedirection();
 app.UseCors(ApiServiceCollectionExtensions.CorsPolicyName);
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

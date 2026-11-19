@@ -48,9 +48,12 @@
             return;
         }
 
-        message = result.StatusCode == HttpStatusCode.Unauthorized
-            ? "Usuario o contraseña incorrectos."
-            : "No se pudo iniciar sesión. Intenta de nuevo.";
+        message = result.StatusCode switch
+        {
+            HttpStatusCode.Unauthorized => "Usuario o contraseña incorrectos.",
+            HttpStatusCode.TooManyRequests => "Demasiados intentos. Espera un minuto e intenta de nuevo.",
+            _ => "No se pudo iniciar sesión. Intenta de nuevo.",
+        };
         isBusy = false;
     }
 }

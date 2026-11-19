@@ -94,3 +94,5 @@ Auth: ASP.NET Core Identity stores users and roles (`Admin`, `Customer`); passwo
 logins lock the account for 15 minutes. The API issues its own JWT (HS256, 60 minutes, `iss`/`aud` validated).
 On startup the API creates the Admin from `Seed:Admin` (`UserName` is `admin` in Development) if no user has that name.
 Users migrated from the pre-Identity `Users` table keep their id and role but have no password: the admin sets one.
+`/api/auth/*` is rate limited per client IP (`RateLimiting:Auth`, 10 requests per minute; 429 with `Retry-After`). Behind a
+reverse proxy (Azure Container Apps) set `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` so the client IP comes from `X-Forwarded-For`.
