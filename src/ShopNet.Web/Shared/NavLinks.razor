@@ -1,16 +1,17 @@
 <AuthorizeView Roles="@RoleNames.Admin">
     <a href="usuario/list" class="nav-link btn btn-link">Usuarios</a>
     <a href="pedido/list" class="nav-link btn btn-link">Pedidos</a>
+    <a href="pedido/create" class="nav-link btn btn-link">Crear pedido</a>
 </AuthorizeView>
 
 <AuthorizeView Roles="@RoleNames.Customer">
     <a href="pedido/mis-pedidos" class="nav-link btn btn-link">Mis pedidos</a>
+    <CartLink />
 </AuthorizeView>
 
 <AuthorizeView>
     <Authorized>
         <a href="producto/list" class="nav-link btn btn-link">Productos</a>
-        <a href="pedido/create" class="nav-link btn btn-link">Crear pedido</a>
         <a href="logout" class="nav-link btn btn-link">Cerrar sesión</a>
     </Authorized>
     <NotAuthorized>

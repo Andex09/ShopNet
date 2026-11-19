@@ -1,5 +1,4 @@
 @inject OrderService Orders
-@inject ProductService Products
 
 <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
 
@@ -13,24 +12,18 @@ else if (orders.Count == 0)
 }
 else
 {
-    <OrderTable Orders="orders" ProductNames="productNames" />
+    <OrderTable Orders="orders" DetailHref="@(id => $"pedido/mis-pedidos/{id}")" />
 }
 
 @code {
     private List<OrderResponse> orders = [];
-    private Dictionary<int, string> productNames = [];
     private bool isBusy = true;
     private string? message;
 
     protected override async Task OnInitializedAsync()
     {
-        var ordersTask = Orders.GetMineAsync();
-        var productsTask = Products.GetAllAsync();
-        await Task.WhenAll(ordersTask, productsTask);
-
-        var result = await ordersTask;
+        var result = await Orders.GetMineAsync();
         orders = result.Value ?? [];
-        productNames = ((await productsTask).Value ?? []).ToDictionary(p => p.Id, p => p.Name);
         message = result.IsSuccess ? null : "No se pudieron cargar tus pedidos.";
         isBusy = false;
     }

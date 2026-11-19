@@ -1,5 +1,4 @@
 @inject OrderService Orders
-@inject ProductService Products
 @inject UserService Users
 
 <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
@@ -14,12 +13,11 @@ else if (orders.Count == 0)
 }
 else
 {
-    <OrderTable Orders="orders" ProductNames="productNames" UserNames="userNames" ShowUser ShowActions />
+    <OrderTable Orders="orders" UserNames="userNames" ShowUser ShowActions />
 }
 
 @code {
     private List<OrderResponse> orders = [];
-    private Dictionary<int, string> productNames = [];
     private Dictionary<int, string> userNames = [];
     private bool isBusy = true;
     private string? message;
@@ -27,13 +25,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         var ordersTask = Orders.GetAllAsync();
-        var productsTask = Products.GetAllAsync();
         var usersTask = Users.GetAllAsync();
-        await Task.WhenAll(ordersTask, productsTask, usersTask);
+        await Task.WhenAll(ordersTask, usersTask);
 
         var result = await ordersTask;
         orders = result.Value ?? [];
-        productNames = ((await productsTask).Value ?? []).ToDictionary(p => p.Id, p => p.Name);
         userNames = ((await usersTask).Value ?? []).ToDictionary(u => u.Id, u => u.UserName);
         message = result.IsSuccess ? null : "No se pudieron cargar los pedidos.";
         isBusy = false;

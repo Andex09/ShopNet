@@ -48,6 +48,19 @@ public sealed class ApiClient(HttpClient http)
         }
     }
 
+    public async Task<ApiResult> PostAsync(string uri, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await http.PostAsync(uri, content: null, cancellationToken);
+            return new(response.StatusCode);
+        }
+        catch (HttpRequestException)
+        {
+            return new(HttpStatusCode.ServiceUnavailable);
+        }
+    }
+
     public async Task<ApiResult> PutAsync<TRequest>(string uri, TRequest body, CancellationToken cancellationToken = default)
     {
         try

@@ -1,0 +1,71 @@
+@* Edits the lines of an order: product and quantity per row, with a live estimate. The API calculates the real amounts. *@
+<table class="table table-sm align-middle">
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th style="width: 7rem">Cantidad</th>
+            <th class="text-end">Valor</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var line in Lines)
+        {
+            <tr>
+                <td>
+                    <select class="form-select form-select-sm" value="@line.ProductId"
+                            @onchange="e => line.ProductId = int.TryParse(e.Value?.ToString(), out var id) ? id : 0">
+                        <option value="0">Seleccione un producto</option>
+                        @foreach (var product in Products)
+                        {
+                            <option value="@product.Id">@product.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" min="1" max="1000" value="@line.Quantity"
+                           @onchange="e => line.Quantity = int.TryParse(e.Value?.ToString(), out var quantity) ? quantity : 1" />
+                </td>
+                <td class="text-end">@(Price(line) is { } price ? OrderEstimate.LineTotal(price, line.Quantity).ToString("C0") : "—")</td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" title="Quitar" @onclick="() => Lines.Remove(line)">
+                        <span class="oi oi-trash"></span>
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<button type="button" class="btn btn-outline-primary btn-sm mb-3" @onclick="() => Lines.Add(new OrderLineRequest())">
+    Agregar producto
+</button>
+
+@if (EstimateLines.Count > 0)
+{
+    var (subtotal, tax, total) = OrderEstimate.Calculate(EstimateLines);
+    <table class="table table-sm w-auto">
+        <tbody>
+            <tr><th>Subtotal</th><td class="text-end">@subtotal.ToString("C0")</td></tr>
+            <tr><th>IVA (@OrderEstimate.TaxRate.ToString("P0"))</th><td class="text-end">@tax.ToString("C0")</td></tr>
+            <tr><th>Total estimado</th><td class="text-end"><strong>@total.ToString("C0")</strong></td></tr>
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public List<OrderLineRequest> Lines { get; set; } = [];
+
+    /// <summary>Products that can be chosen (active ones; the API rejects the rest).</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ProductResponse> Products { get; set; } = [];
+
+    public static bool AreComplete(IReadOnlyCollection<OrderLineRequest> lines) =>
+        lines.Count > 0 && lines.All(l => l.ProductId > 0 && l.Quantity is >= 1 and <= 1000);
+
+    private List<(decimal UnitPrice, int Quantity)> EstimateLines =>
+        [.. Lines.Where(l => Price(l) is not null && l.Quantity > 0).Select(l => (Price(l)!.Value, l.Quantity))];
+
+    private decimal? Price(OrderLineRequest line) => Products.FirstOrDefault(p => p.Id == line.ProductId)?.Price;
+}

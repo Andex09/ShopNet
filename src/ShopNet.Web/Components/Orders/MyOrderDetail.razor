@@ -1,0 +1,79 @@
+@inject OrderService Orders
+@inject NavigationManager Navigation
+
+<div class="container-fluid" style="max-width: 48rem">
+    <h3>
+        Pedido @(order is null ? null : $"#{order.Id}")
+        @if (order is not null)
+        {
+            <OrderStatusBadge Status="@order.Status" />
+        }
+    </h3>
+
+    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+    @if (order is null)
+    {
+        @if (message is null)
+        {
+            <Busy />
+        }
+    }
+    else
+    {
+        <p class="text-body-secondary">@order.CreatedAt.ToLocalTime().ToString("g")</p>
+
+        <OrderLinesTable Order="order" />
+
+        @if (order.Status == OrderStatusNames.Pending)
+        {
+            <p>Tu pedido está pendiente de confirmación. Mientras tanto puedes cancelarlo.</p>
+        }
+    }
+
+    <div class="d-flex gap-2">
+        @if (order?.Status == OrderStatusNames.Pending)
+        {
+            <button type="button" class="btn btn-outline-danger btn-sm" disabled="@isBusy" @onclick="CancelAsync">Cancelar pedido</button>
+        }
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="@(() => Navigation.NavigateTo("pedido/mis-pedidos"))">Volver</button>
+    </div>
+</div>
+
+@code {
+    private OrderResponse? order;
+    private bool isBusy;
+    private string? message;
+
+    [Parameter, EditorRequired]
+    public int OrderId { get; set; }
+
+    protected override Task OnParametersSetAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Orders.GetMineAsync(OrderId);
+        order = result.Value;
+        message = result.StatusCode switch
+        {
+            _ when result.IsSuccess => null,
+            HttpStatusCode.NotFound => "El pedido no existe.",
+            _ => "No se pudo consultar el pedido.",
+        };
+    }
+
+    private async Task CancelAsync()
+    {
+        isBusy = true;
+        var result = await Orders.CancelMineAsync(OrderId);
+        await LoadAsync();
+        if (!result.IsSuccess)
+        {
+            message = result.StatusCode == HttpStatusCode.Conflict
+                ? "El pedido ya fue confirmado, no se puede cancelar."
+                : "No se pudo cancelar el pedido.";
+        }
+
+        isBusy = false;
+    }
+}

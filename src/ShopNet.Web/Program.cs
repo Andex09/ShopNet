@@ -27,9 +27,11 @@ builder.Services.AddScoped(sp => new HttpClient(new BearerTokenHandler(sp.GetReq
 });
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<CartService>();
 
 builder.Services.AddBlazoredSessionStorage();
 builder.Services.AddSingleton(TimeProvider.System);

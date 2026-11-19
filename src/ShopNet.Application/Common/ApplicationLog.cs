@@ -23,6 +23,15 @@ internal static partial class ApplicationLog
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Product {ProductId} deleted")]
     public static partial void ProductDeleted(this ILogger logger, int productId);
 
+    [LoggerMessage(EventId = 1102, Level = LogLevel.Information, Message = "Product {ProductId} deactivated instead of deleted: it has orders")]
+    public static partial void ProductDeactivated(this ILogger logger, int productId);
+
+    [LoggerMessage(EventId = 1150, Level = LogLevel.Information, Message = "Category {CategoryId} created")]
+    public static partial void CategoryCreated(this ILogger logger, int categoryId);
+
+    [LoggerMessage(EventId = 1151, Level = LogLevel.Information, Message = "Category {CategoryId} deleted")]
+    public static partial void CategoryDeleted(this ILogger logger, int categoryId);
+
     [LoggerMessage(EventId = 1200, Level = LogLevel.Information, Message = "User {UserId} created with role {Role}")]
     public static partial void UserCreated(this ILogger logger, int userId, string role);
 
@@ -32,6 +41,9 @@ internal static partial class ApplicationLog
     [LoggerMessage(EventId = 1300, Level = LogLevel.Information, Message = "Order {OrderId} created for user {UserId}, total {Total}")]
     public static partial void OrderCreated(this ILogger logger, int orderId, int userId, decimal total);
 
-    [LoggerMessage(EventId = 1301, Level = LogLevel.Information, Message = "Order {OrderId} deleted")]
-    public static partial void OrderDeleted(this ILogger logger, int orderId);
+    [LoggerMessage(EventId = 1301, Level = LogLevel.Information, Message = "Order {OrderId} confirmed")]
+    public static partial void OrderConfirmed(this ILogger logger, int orderId);
+
+    [LoggerMessage(EventId = 1302, Level = LogLevel.Information, Message = "Order {OrderId} cancelled")]
+    public static partial void OrderCancelled(this ILogger logger, int orderId);
 }

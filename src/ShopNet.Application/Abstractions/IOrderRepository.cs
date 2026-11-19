@@ -15,6 +15,4 @@ public interface IOrderRepository
     Task<bool> AnyForUserAsync(int userId, CancellationToken cancellationToken);
 
     void Add(Order order);
-
-    void Remove(Order order);
 }

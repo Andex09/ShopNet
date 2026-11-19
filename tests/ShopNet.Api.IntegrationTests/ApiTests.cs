@@ -46,12 +46,13 @@ public class ApiTests(ApiFactory factory)
         var client = await factory.CreateCustomerClientAsync("buyer");
 
         // Seeded product 2: "Mx 3 Mouse", 350.000. Tax 19%.
-        var response = await client.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 2, Quantity = 2 }, Ct);
+        var response = await client.PostAsJsonAsync("/api/me/orders", TestOrders.Of(2, 2), Ct);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         var order = await response.Content.ReadFromJsonAsync<OrderResponse>(Ct);
         order.ShouldNotBeNull();
-        order.UnitPrice.ShouldBe(350_000m);
+        order.Status.ShouldBe(OrderStatusNames.Pending);
+        order.Lines.ShouldHaveSingleItem().UnitPrice.ShouldBe(350_000m);
         order.Subtotal.ShouldBe(700_000m);
         order.Tax.ShouldBe(133_000m);
         order.Total.ShouldBe(833_000m);
@@ -62,7 +63,7 @@ public class ApiTests(ApiFactory factory)
     {
         var client = await factory.CreateCustomerClientAsync("lost.buyer");
 
-        var response = await client.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 999, Quantity = 1 }, Ct);
+        var response = await client.PostAsJsonAsync("/api/me/orders", TestOrders.Of(999, 1), Ct);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         var body = await response.Content.ReadAsStringAsync(Ct);

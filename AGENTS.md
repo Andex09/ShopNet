@@ -15,7 +15,7 @@ solution building, tested and running.
 | 1 | .NET 10, central package management, OpenAPI + Scalar, secrets out of config | Done |
 | 2 | Clean Architecture, Minimal APIs, ProblemDetails, FluentValidation, OpenTelemetry, health checks, Aspire, test projects | Done |
 | 3 | ASP.NET Core Identity, hardened JWT (iss/aud), admin seed, rate limiting | Done |
-| 4 | Orders with multiple lines, realistic catalog seed | Pending |
+| 4 | Orders with multiple lines and states, categories, technology catalog seed, customer cart | Done |
 | 5 | Full test coverage, CI | Pending |
 | 6 | AI: semantic search, similar products, recommendations (Azure OpenAI embeddings + Azure SQL `VECTOR`) | Pending |
 | 7 | Terraform (azurerm): Container Apps, Azure SQL, Static Web Apps, Key Vault, AI Foundry | Pending |
@@ -36,7 +36,7 @@ solution building, tested and running.
 
 ```
 src/
-  ShopNet.Domain           Entities (Product, Order) and their invariants, role names. No dependencies.
+  ShopNet.Domain           Entities (Category, Product, Order + OrderLine) and their invariants, role names. No dependencies.
   ShopNet.Application      Use cases: one *Handler class per use case, grouped by feature; FluentValidation validators;
                            ports (IProductRepository, IUserAccounts, IUnitOfWork, ITokenService, ICurrentUser...).
   ShopNet.Infrastructure   EF Core (ShopNetDbContext, configurations, migrations, repositories), ASP.NET Core Identity
@@ -59,8 +59,13 @@ Dependencies point inwards: Api → Application/Infrastructure → Domain. Endpo
 Expected errors are exceptions (`NotFoundException` 404, `ConflictException` 409, `DomainException` 400) translated by
 `GlobalExceptionHandler`; anything else is a generic 500 that is logged, never exposed.
 
-Order amounts are always calculated by the server (`Order.Create/Change`) from the stored product price and the
-`Orders:TaxRate` setting. Deleting a product or user with orders returns 409 (FKs are `Restrict`).
+Orders are an aggregate (`Order` with `OrderLine`s). Amounts are always calculated by the server (`Order.Create/ReplaceLines`):
+lines copy the stored product name and price, repeated products are merged, and tax (`Orders:TaxRate`) is rounded once
+on the subtotal. An order starts `Pending` and moves to `Confirmed` (admin) or `Cancelled` (admin, or its owner); after that
+it cannot change (`OrderStateException` -> 409). Orders are never deleted. Deleting a product that has orders deactivates
+it instead (inactive products are hidden from customers and cannot be ordered); deleting a user with orders, or a category
+with products, returns 409 (FKs are `Restrict`). The catalog (8 categories, 60+ products) is seeded by a migration with SQL,
+not `HasData`; migrations that change existing data are written by hand so data is preserved.
 
 ## Commands
 
@@ -90,8 +95,10 @@ dotnet ef migrations add <Name> --project src/ShopNet.Infrastructure --output-di
 ```
 
 URLs: API `https://localhost:7165` (Scalar at `/scalar/v1`, OpenAPI at `/openapi/v1.json`), Web `https://localhost:7043`.
-The API redirects HTTP to HTTPS. Main routes: `/api/auth/*`, `/api/products`, `/api/users` (admin), `/api/orders` (admin),
-`/api/me/orders` (signed-in user).
+The API redirects HTTP to HTTPS. Main routes: `/api/auth/*`, `/api/categories`, `/api/products`
+(`?categoryId=`, `?includeInactive=` for admins), `/api/users` (admin), `/api/orders` (admin, plus `{id}/confirm` and
+`{id}/cancel`), `/api/me/orders` (signed-in user, plus `{id}/cancel`). Web: the catalog adds to a per-user cart kept in
+session storage (`CartService`, `/carrito`); the API prices the order, the cart only shows an estimate.
 
 Auth: ASP.NET Core Identity stores users and roles (`Admin`, `Customer`); passwords are PBKDF2 hashes and 5 failed
 logins lock the account for 15 minutes. The API issues its own JWT (HS256, 60 minutes, `iss`/`aud` validated).
