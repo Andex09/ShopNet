@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 
 <div class="div-container-form">
-    <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+    <AlertMessage Message="@message" MessageType="@messageType" />
 
     <EditForm Model="request" OnValidSubmit="LoginAsync" class="col-md-6 container-form">
         <DataAnnotationsValidator />
@@ -34,6 +34,15 @@
     private readonly LoginRequest request = new();
     private bool isBusy;
     private string? message;
+    private AlertMessageType messageType = AlertMessageType.Error;
+
+    protected override void OnInitialized()
+    {
+        if (AuthState.SessionExpired)
+        {
+            (messageType, message) = (AlertMessageType.Warning, "Tu sesión expiró. Inicia sesión de nuevo.");
+        }
+    }
 
     private async Task LoginAsync()
     {
@@ -43,11 +52,12 @@
         var result = await Auth.LoginAsync(request);
         if (result is { IsSuccess: true, Value: not null })
         {
-            await AuthState.SignInAsync(result.Value);
+            await AuthState.SignInAsync(result.Value.Token);
             Navigation.NavigateTo("producto/list");
             return;
         }
 
+        messageType = AlertMessageType.Error;
         message = result.StatusCode switch
         {
             HttpStatusCode.Unauthorized => "Usuario o contraseña incorrectos.",
