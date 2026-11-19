@@ -6,7 +6,7 @@ namespace ShopNet.UnitTests.Domain;
 
 public class OrderTests
 {
-    private static readonly Product Mouse = Product.Create("Mx 3 Mouse", 350_000m);
+    private static readonly Product Mouse = TestCatalog.Product("Mx 3 Mouse", 350_000m);
 
     [Fact]
     public void Create_calculates_amounts_from_the_product_price()
@@ -24,7 +24,7 @@ public class OrderTests
     [Fact]
     public void Create_rounds_tax_to_two_decimals_away_from_zero()
     {
-        var product = Product.Create("Cable", 10.05m);
+        var product = TestCatalog.Product("Cable", 10.05m);
 
         var order = Order.Create(1, product, quantity: 1, taxRate: 0.19m);
 
@@ -47,10 +47,19 @@ public class OrderTests
         Should.Throw<DomainException>(() => Order.Create(1, Mouse, 1, (decimal)taxRate));
 
     [Fact]
+    public void Create_rejects_an_inactive_product()
+    {
+        var discontinued = TestCatalog.Product("Descontinuado", 1_000m);
+        discontinued.Deactivate();
+
+        Should.Throw<DomainException>(() => Order.Create(1, discontinued, 1, 0.19m));
+    }
+
+    [Fact]
     public void Change_recalculates_with_the_new_product_and_quantity()
     {
         var order = Order.Create(1, Mouse, 1, 0.19m);
-        var headphones = Product.Create("Audifonos", 200_000m);
+        var headphones = TestCatalog.Product("Audifonos", 200_000m);
 
         order.Change(headphones, quantity: 3, taxRate: 0.19m);
 

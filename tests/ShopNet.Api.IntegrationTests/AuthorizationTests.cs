@@ -20,6 +20,9 @@ public class AuthorizationTests(ApiFactory factory)
         { "POST", "/api/products" },
         { "PUT", "/api/products/1" },
         { "DELETE", "/api/products/1" },
+        { "POST", "/api/categories" },
+        { "PUT", "/api/categories/1" },
+        { "DELETE", "/api/categories/1" },
     };
 
     [Theory]
@@ -67,7 +70,7 @@ public class AuthorizationTests(ApiFactory factory)
         var alice = await factory.CreateCustomerClientAsync("alice");
         var bob = await factory.CreateCustomerClientAsync("bob");
 
-        var created = await alice.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 1, Quantity = 1 }, Ct);
+        var created = await alice.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = 2, Quantity = 1 }, Ct);
         var aliceOrder = await created.Content.ReadFromJsonAsync<OrderResponse>(Ct);
 
         var bobOrders = await bob.GetFromJsonAsync<List<OrderResponse>>("/api/me/orders", Ct);

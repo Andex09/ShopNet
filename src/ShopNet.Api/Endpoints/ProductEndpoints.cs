@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using ShopNet.Api.Infrastructure;
 using ShopNet.Application.Features.Products;
 using ShopNet.Contracts.Products;
+using ShopNet.Domain.Users;
 
 namespace ShopNet.Api.Endpoints;
 
@@ -10,9 +12,11 @@ public static class ProductEndpoints
     {
         var group = app.MapGroup("/api/products").WithTags("Products").RequireAuthorization();
 
-        group.MapGet("/", async (GetProductsHandler handler, CancellationToken ct) =>
-                TypedResults.Ok(await handler.HandleAsync(ct)))
-            .WithName("GetProducts");
+        group.MapGet("/", async (int? categoryId, bool? includeInactive, ClaimsPrincipal user, GetProductsHandler handler, CancellationToken ct) =>
+                TypedResults.Ok(await handler.HandleAsync(
+                    includeInactive: includeInactive == true && user.IsInRole(Roles.Admin), categoryId, ct)))
+            .WithName("GetProducts")
+            .WithSummary("Active products, optionally by category. Admins can add includeInactive=true.");
 
         group.MapGet("/{id:int}", async (int id, GetProductByIdHandler handler, CancellationToken ct) =>
                 TypedResults.Ok(await handler.HandleAsync(id, ct)))
@@ -44,9 +48,9 @@ public static class ProductEndpoints
                 return TypedResults.NoContent();
             })
             .WithName("DeleteProduct")
+            .WithSummary("Deletes a product that was never ordered; one with orders is deactivated instead.")
             .RequireAuthorization(Policies.Admin)
-            .ProducesProblem(StatusCodes.Status404NotFound)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }

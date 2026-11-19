@@ -7,6 +7,7 @@ using ShopNet.Application.Features.Orders;
 using ShopNet.Contracts.Orders;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
+using ShopNet.UnitTests.Domain;
 
 namespace ShopNet.UnitTests.Application;
 
@@ -31,7 +32,7 @@ public class CreateOrderHandlerTests
     [Fact]
     public async Task Uses_the_stored_product_price_and_configured_tax()
     {
-        _products.GetByIdAsync(2, Arg.Any<CancellationToken>()).Returns(Product.Create("Mouse", 350_000m));
+        _products.GetByIdAsync(2, Arg.Any<CancellationToken>()).Returns(TestCatalog.Product("Mouse", 350_000m));
 
         var response = await _handler.HandleAsync(
             new CreateOrderRequest { UserId = 1, ProductId = 2, Quantity = 2 }, TestContext.Current.CancellationToken);

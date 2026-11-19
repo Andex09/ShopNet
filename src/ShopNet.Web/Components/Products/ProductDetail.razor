@@ -19,7 +19,13 @@
             <tbody>
                 <tr><th>ID</th><td>@product.Id</td></tr>
                 <tr><th>Nombre</th><td>@product.Name</td></tr>
+                <tr><th>Categoría</th><td>@product.CategoryName</td></tr>
+                <tr><th>Descripción</th><td>@product.Description</td></tr>
                 <tr><th>Precio</th><td>@product.Price.ToString("C0")</td></tr>
+                @if (!product.IsActive)
+                {
+                    <tr><th>Estado</th><td><span class="badge text-bg-secondary">Inactivo</span></td></tr>
+                }
             </tbody>
         </table>
     }

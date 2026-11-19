@@ -1,12 +1,24 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using ShopNet.Domain.Categories;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
 using ShopNet.Domain.Users;
 using ShopNet.Infrastructure.Identity;
 
 namespace ShopNet.Infrastructure.Persistence;
+
+internal sealed class CategoryConfiguration : IEntityTypeConfiguration<Category>
+{
+    public void Configure(EntityTypeBuilder<Category> builder)
+    {
+        builder.ToTable("Categories");
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Name).HasMaxLength(Category.NameMaxLength).IsRequired();
+        builder.HasIndex(c => c.Name).IsUnique();
+    }
+}
 
 internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
@@ -15,12 +27,11 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.ToTable("Products");
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Name).HasMaxLength(Product.NameMaxLength).IsRequired();
+        builder.Property(p => p.Description).HasMaxLength(Product.DescriptionMaxLength).IsRequired();
         builder.Property(p => p.Price).HasPrecision(18, 2);
 
-        builder.HasData(
-            new { Id = 1, Name = "Platzi", Price = 400000m },
-            new { Id = 2, Name = "Mx 3 Mouse", Price = 350000m },
-            new { Id = 3, Name = "Audifonos Logitech", Price = 200000m });
+        // The catalog is content that admins edit, so it is seeded by a migration (SQL), not HasData.
+        builder.HasOne(p => p.Category).WithMany().HasForeignKey(p => p.CategoryId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

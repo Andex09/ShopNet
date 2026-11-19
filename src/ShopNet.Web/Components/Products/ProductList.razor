@@ -1,6 +1,18 @@
 @inject ProductService Products
+@inject CategoryService Categories
 
 <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
+
+<div class="mb-3" style="max-width: 20rem">
+    <label class="form-label" for="category-filter">Categoría</label>
+    <select id="category-filter" class="form-select form-select-sm" @onchange="FilterAsync">
+        <option value="">Todas</option>
+        @foreach (var category in categories)
+        {
+            <option value="@category.Id">@category.Name</option>
+        }
+    </select>
+</div>
 
 @if (isBusy)
 {
@@ -15,8 +27,8 @@ else
     <table class="table table-hover table-bordered">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Nombre</th>
+                <th>Categoría</th>
                 <th class="text-end">Precio</th>
                 <th></th>
             </tr>
@@ -24,9 +36,15 @@ else
         <tbody>
             @foreach (var product in products)
             {
-                <tr>
-                    <td>@product.Id</td>
-                    <td>@product.Name</td>
+                <tr class="@(product.IsActive ? null : "text-body-secondary")">
+                    <td>
+                        @product.Name
+                        @if (!product.IsActive)
+                        {
+                            <span class="badge text-bg-secondary ms-2">Inactivo</span>
+                        }
+                    </td>
+                    <td>@product.CategoryName</td>
                     <td class="text-end">@product.Price.ToString("C0")</td>
                     <td class="text-nowrap">
                         <a href="producto/@product.Id" title="Ver"><span class="oi oi-eye"></span></a>
@@ -42,12 +60,38 @@ else
 
 @code {
     private List<ProductResponse> products = [];
+    private List<CategoryResponse> categories = [];
+    private int? categoryId;
+    private bool isAdmin;
     private bool isBusy = true;
     private string? message;
 
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
     protected override async Task OnInitializedAsync()
     {
-        var result = await Products.GetAllAsync();
+        if (AuthenticationState is not null)
+        {
+            isAdmin = (await AuthenticationState).User.IsInRole(RoleNames.Admin);
+        }
+
+        categories = (await Categories.GetAllAsync()).Value ?? [];
+        await LoadAsync();
+    }
+
+    private async Task FilterAsync(ChangeEventArgs e)
+    {
+        categoryId = int.TryParse(e.Value?.ToString(), out var id) ? id : null;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        isBusy = true;
+
+        // Admins also see inactive products, to reactivate them.
+        var result = await Products.GetAllAsync(categoryId, includeInactive: isAdmin);
         products = result.Value ?? [];
         message = result.IsSuccess ? null : "No se pudieron cargar los productos.";
         isBusy = false;

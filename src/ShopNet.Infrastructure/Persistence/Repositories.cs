@@ -1,17 +1,51 @@
 using Microsoft.EntityFrameworkCore;
 using ShopNet.Application.Abstractions;
+using ShopNet.Domain.Categories;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
 
 namespace ShopNet.Infrastructure.Persistence;
 
+internal sealed class CategoryRepository(ShopNetDbContext db) : ICategoryRepository
+{
+    public async Task<IReadOnlyList<Category>> ListAsync(CancellationToken cancellationToken) =>
+        await db.Categories.AsNoTracking().OrderBy(c => c.Name).ToListAsync(cancellationToken);
+
+    public Task<Category?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+        db.Categories.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+    public Task<bool> NameExistsAsync(string name, int? excludeCategoryId, CancellationToken cancellationToken) =>
+        db.Categories.AnyAsync(c => c.Name == name && c.Id != excludeCategoryId, cancellationToken);
+
+    public void Add(Category category) => db.Categories.Add(category);
+
+    public void Remove(Category category) => db.Categories.Remove(category);
+}
+
 internal sealed class ProductRepository(ShopNetDbContext db) : IProductRepository
 {
-    public async Task<IReadOnlyList<Product>> ListAsync(CancellationToken cancellationToken) =>
-        await db.Products.AsNoTracking().OrderBy(p => p.Id).ToListAsync(cancellationToken);
+    public async Task<IReadOnlyList<Product>> ListAsync(bool includeInactive, int? categoryId, CancellationToken cancellationToken)
+    {
+        var query = db.Products.AsNoTracking().Include(p => p.Category).AsQueryable();
+
+        if (!includeInactive)
+        {
+            query = query.Where(p => p.IsActive);
+        }
+
+        if (categoryId is { } id)
+        {
+            query = query.Where(p => p.CategoryId == id);
+        }
+
+        return await query.OrderBy(p => p.Category.Name).ThenBy(p => p.Name).ToListAsync(cancellationToken);
+    }
 
     public Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        db.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        db.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+
+    public Task<bool> AnyInCategoryAsync(int categoryId, CancellationToken cancellationToken) =>
+        db.Products.AnyAsync(p => p.CategoryId == categoryId, cancellationToken);
 
     public void Add(Product product) => db.Products.Add(product);
 

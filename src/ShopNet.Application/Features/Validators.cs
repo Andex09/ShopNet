@@ -1,8 +1,10 @@
 using FluentValidation;
 using ShopNet.Contracts.Auth;
+using ShopNet.Contracts.Categories;
 using ShopNet.Contracts.Orders;
 using ShopNet.Contracts.Products;
 using ShopNet.Contracts.Users;
+using ShopNet.Domain.Categories;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
 using ShopNet.Domain.Users;
@@ -51,7 +53,17 @@ internal sealed class ProductRequestValidator : AbstractValidator<ProductRequest
     public ProductRequestValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(Product.NameMaxLength);
+        RuleFor(x => x.Description).MaximumLength(Product.DescriptionMaxLength);
         RuleFor(x => x.Price).GreaterThan(0).PrecisionScale(18, 2, ignoreTrailingZeros: true);
+        RuleFor(x => x.CategoryId).GreaterThan(0);
+    }
+}
+
+internal sealed class CategoryRequestValidator : AbstractValidator<CategoryRequest>
+{
+    public CategoryRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty().MaximumLength(Category.NameMaxLength);
     }
 }
 

@@ -1,4 +1,5 @@
 using ShopNet.Contracts.Auth;
+using ShopNet.Contracts.Categories;
 using ShopNet.Contracts.Orders;
 using ShopNet.Contracts.Products;
 using ShopNet.Contracts.Users;
@@ -14,9 +15,18 @@ public sealed class AuthService(ApiClient api)
         api.PostAsync<RegisterRequest, UserResponse>("api/auth/register", request);
 }
 
+public sealed class CategoryService(ApiClient api)
+{
+    public Task<ApiResult<List<CategoryResponse>>> GetAllAsync() => api.GetAsync<List<CategoryResponse>>("api/categories");
+}
+
 public sealed class ProductService(ApiClient api)
 {
-    public Task<ApiResult<List<ProductResponse>>> GetAllAsync() => api.GetAsync<List<ProductResponse>>("api/products");
+    /// <param name="categoryId">Only this category, when set.</param>
+    /// <param name="includeInactive">Also deactivated products. The API honours it only for admins.</param>
+    public Task<ApiResult<List<ProductResponse>>> GetAllAsync(int? categoryId = null, bool includeInactive = false) =>
+        api.GetAsync<List<ProductResponse>>(
+            $"api/products?includeInactive={(includeInactive ? "true" : "false")}" + (categoryId is { } id ? $"&categoryId={id}" : string.Empty));
 
     public Task<ApiResult<ProductResponse>> GetAsync(int id) => api.GetAsync<ProductResponse>($"api/products/{id}");
 

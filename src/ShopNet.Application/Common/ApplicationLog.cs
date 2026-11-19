@@ -23,6 +23,15 @@ internal static partial class ApplicationLog
     [LoggerMessage(EventId = 1101, Level = LogLevel.Information, Message = "Product {ProductId} deleted")]
     public static partial void ProductDeleted(this ILogger logger, int productId);
 
+    [LoggerMessage(EventId = 1102, Level = LogLevel.Information, Message = "Product {ProductId} deactivated instead of deleted: it has orders")]
+    public static partial void ProductDeactivated(this ILogger logger, int productId);
+
+    [LoggerMessage(EventId = 1150, Level = LogLevel.Information, Message = "Category {CategoryId} created")]
+    public static partial void CategoryCreated(this ILogger logger, int categoryId);
+
+    [LoggerMessage(EventId = 1151, Level = LogLevel.Information, Message = "Category {CategoryId} deleted")]
+    public static partial void CategoryDeleted(this ILogger logger, int categoryId);
+
     [LoggerMessage(EventId = 1200, Level = LogLevel.Information, Message = "User {UserId} created with role {Role}")]
     public static partial void UserCreated(this ILogger logger, int userId, string role);
 

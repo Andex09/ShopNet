@@ -54,6 +54,11 @@ public sealed class Order
             throw new DomainException($"Quantity must be between 1 and {MaxQuantity}.");
         }
 
+        if (!product.IsActive)
+        {
+            throw new DomainException($"Product '{product.Name}' is no longer available.");
+        }
+
         if (taxRate is < 0 or >= 1)
         {
             throw new DomainException("Tax rate must be between 0 and 1.");

@@ -37,6 +37,7 @@ app.UseAuthorization();
 
 app.MapDefaultEndpoints();
 app.MapAuthEndpoints();
+app.MapCategoryEndpoints();
 app.MapProductEndpoints();
 app.MapUserEndpoints();
 app.MapOrderEndpoints();

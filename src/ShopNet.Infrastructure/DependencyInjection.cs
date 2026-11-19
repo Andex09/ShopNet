@@ -22,6 +22,7 @@ public static class DependencyInjection
         builder.AddSqlServerDbContext<ShopNetDbContext>(ConnectionName);
         builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ShopNetDbContext>());
 
+        builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
         builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
