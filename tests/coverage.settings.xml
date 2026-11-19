@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Code coverage settings, passed to dotnet test with the coverage-settings option (see AGENTS.md). -->
+<Configuration>
+  <Format>cobertura</Format>
+  <CodeCoverage>
+    <ModulePaths>
+      <Include>
+        <ModulePath>.*ShopNet\.(Domain|Application|Infrastructure|Api|Contracts|ServiceDefaults)\.dll$</ModulePath>
+      </Include>
+    </ModulePaths>
+    <Attributes>
+      <Exclude>
+        <!-- EF Core migrations and the model snapshot are generated. -->
+        <Attribute>^Microsoft\.EntityFrameworkCore\.Migrations\.MigrationAttribute$</Attribute>
+        <Attribute>^Microsoft\.EntityFrameworkCore\.Infrastructure\.DbContextAttribute$</Attribute>
+        <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+        <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+      </Exclude>
+    </Attributes>
+  </CodeCoverage>
+</Configuration>
