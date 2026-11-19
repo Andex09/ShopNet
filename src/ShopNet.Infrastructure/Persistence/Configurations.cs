@@ -41,15 +41,34 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
     {
         builder.ToTable("Orders");
         builder.HasKey(o => o.Id);
-        builder.Property(o => o.UnitPrice).HasPrecision(18, 2);
+        builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(o => o.Subtotal).HasPrecision(18, 2);
         builder.Property(o => o.TaxRate).HasPrecision(5, 4);
         builder.Property(o => o.Tax).HasPrecision(18, 2);
         builder.Property(o => o.Total).HasPrecision(18, 2);
+        builder.HasIndex(o => new { o.UserId, o.CreatedAt });
 
-        // Restrict (not cascade): deleting a user or product must never erase order history.
+        // Restrict (not cascade): deleting a user must never erase order history.
         builder.HasOne<AppUser>().WithMany().HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Product>().WithMany().HasForeignKey(o => o.ProductId).OnDelete(DeleteBehavior.Restrict);
+
+        // Lines belong to the order (cascade) and are only reached through it; EF writes the private list directly.
+        builder.HasMany(o => o.Lines).WithOne().HasForeignKey("OrderId").IsRequired().OnDelete(DeleteBehavior.Cascade);
+        builder.Navigation(o => o.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+internal sealed class OrderLineConfiguration : IEntityTypeConfiguration<OrderLine>
+{
+    public void Configure(EntityTypeBuilder<OrderLine> builder)
+    {
+        builder.ToTable("OrderLines");
+        builder.HasKey(l => l.Id);
+        builder.Property(l => l.ProductName).HasMaxLength(Product.NameMaxLength).IsRequired();
+        builder.Property(l => l.UnitPrice).HasPrecision(18, 2);
+        builder.Property(l => l.LineTotal).HasPrecision(18, 2);
+
+        // Restrict: a product that was ordered is deactivated, never deleted.
+        builder.HasOne<Product>().WithMany().HasForeignKey(l => l.ProductId).OnDelete(DeleteBehavior.Restrict);
     }
 }
 

@@ -44,6 +44,9 @@ internal sealed class ProductRepository(ShopNetDbContext db) : IProductRepositor
     public Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
         db.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Product>> GetByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken) =>
+        await db.Products.Include(p => p.Category).Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
+
     public Task<bool> AnyInCategoryAsync(int categoryId, CancellationToken cancellationToken) =>
         db.Products.AnyAsync(p => p.CategoryId == categoryId, cancellationToken);
 
@@ -55,21 +58,24 @@ internal sealed class ProductRepository(ShopNetDbContext db) : IProductRepositor
 internal sealed class OrderRepository(ShopNetDbContext db) : IOrderRepository
 {
     public async Task<IReadOnlyList<Order>> ListAsync(CancellationToken cancellationToken) =>
-        await db.Orders.AsNoTracking().OrderByDescending(o => o.Id).ToListAsync(cancellationToken);
+        await db.Orders.AsNoTracking().Include(o => o.Lines).AsSplitQuery()
+            .OrderByDescending(o => o.CreatedAt).ThenByDescending(o => o.Id)
+            .ToListAsync(cancellationToken);
 
     public async Task<IReadOnlyList<Order>> ListByUserAsync(int userId, CancellationToken cancellationToken) =>
-        await db.Orders.AsNoTracking().Where(o => o.UserId == userId).OrderByDescending(o => o.Id).ToListAsync(cancellationToken);
+        await db.Orders.AsNoTracking().Include(o => o.Lines).AsSplitQuery()
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt).ThenByDescending(o => o.Id)
+            .ToListAsync(cancellationToken);
 
     public Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        db.Orders.FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+        db.Orders.Include(o => o.Lines).FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
 
     public Task<bool> AnyForProductAsync(int productId, CancellationToken cancellationToken) =>
-        db.Orders.AnyAsync(o => o.ProductId == productId, cancellationToken);
+        db.Set<OrderLine>().AnyAsync(l => l.ProductId == productId, cancellationToken);
 
     public Task<bool> AnyForUserAsync(int userId, CancellationToken cancellationToken) =>
         db.Orders.AnyAsync(o => o.UserId == userId, cancellationToken);
 
     public void Add(Order order) => db.Orders.Add(order);
-
-    public void Remove(Order order) => db.Orders.Remove(order);
 }

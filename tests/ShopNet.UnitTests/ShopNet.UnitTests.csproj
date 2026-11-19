@@ -7,7 +7,14 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ShopNet.Application\ShopNet.Application.csproj" />
     <ProjectReference Include="..\..\src\ShopNet.Infrastructure\ShopNet.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\ShopNet.Web\ShopNet.Web.csproj" />
+  </ItemGroup>
+
+  <!--
+    The client's token parser is plain C#, so it is compiled into the tests instead of referencing the Blazor
+    WebAssembly project, which would make every test build also build and publish the WASM app.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\src\ShopNet.Web\Auth\UserSession.cs" Link="Web\UserSession.cs" />
   </ItemGroup>
 
 </Project>

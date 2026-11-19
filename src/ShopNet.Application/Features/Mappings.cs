@@ -23,6 +23,7 @@ public static class Mappings
         new(user.Id, user.UserName, user.Role);
 
     public static OrderResponse ToResponse(this Order order) =>
-        new(order.Id, order.UserId, order.ProductId, order.UnitPrice, order.Quantity,
+        new(order.Id, order.UserId, order.CreatedAt, order.Status.ToString(),
+            [.. order.Lines.Select(l => new OrderLineResponse(l.ProductId, l.ProductName, l.UnitPrice, l.Quantity, l.LineTotal))],
             order.Subtotal, order.TaxRate, order.Tax, order.Total);
 }

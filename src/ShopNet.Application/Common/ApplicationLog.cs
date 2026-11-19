@@ -41,6 +41,9 @@ internal static partial class ApplicationLog
     [LoggerMessage(EventId = 1300, Level = LogLevel.Information, Message = "Order {OrderId} created for user {UserId}, total {Total}")]
     public static partial void OrderCreated(this ILogger logger, int orderId, int userId, decimal total);
 
-    [LoggerMessage(EventId = 1301, Level = LogLevel.Information, Message = "Order {OrderId} deleted")]
-    public static partial void OrderDeleted(this ILogger logger, int orderId);
+    [LoggerMessage(EventId = 1301, Level = LogLevel.Information, Message = "Order {OrderId} confirmed")]
+    public static partial void OrderConfirmed(this ILogger logger, int orderId);
+
+    [LoggerMessage(EventId = 1302, Level = LogLevel.Information, Message = "Order {OrderId} cancelled")]
+    public static partial void OrderCancelled(this ILogger logger, int orderId);
 }

@@ -2,7 +2,7 @@
 @inject ProductService Products
 @inject NavigationManager Navigation
 
-@* Customer: order a product for themselves. The API takes the user from the token. *@
+@* Customer: order products for themselves. The API takes the user from the token. *@
 <div class="div-container-form">
     <AlertMessage Message="@message" MessageType="AlertMessageType.Error" />
 
@@ -12,46 +12,25 @@
     }
     else
     {
-        <EditForm Model="request" OnValidSubmit="CreateAsync" class="col-md-8 container-form">
-            <DataAnnotationsValidator />
-
+        <div class="col-md-10 container-form">
             <h3>Nuevo pedido</h3>
 
-            <div class="mb-3">
-                <label class="form-label">Producto</label>
-                <InputSelect @bind-Value="request.ProductId" class="form-select">
-                    <option value="0">Seleccione un producto</option>
-                    @foreach (var product in products)
-                    {
-                        <option value="@product.Id">@product.Name</option>
-                    }
-                </InputSelect>
-                <ValidationMessage For="() => request.ProductId" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Cantidad</label>
-                <InputNumber @bind-Value="request.Quantity" class="form-control" min="1" />
-                <ValidationMessage For="() => request.Quantity" />
-            </div>
-
-            <OrderEstimateView Product="SelectedProduct" Quantity="request.Quantity" />
+            <OrderLinesEditor Lines="request.Lines" Products="products" />
 
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary btn-sm" disabled="@isBusy">Crear pedido</button>
+                <button type="button" class="btn btn-primary btn-sm" disabled="@isBusy" @onclick="CreateAsync">Crear pedido</button>
                 <button type="button" class="btn btn-secondary btn-sm" @onclick="@(() => Navigation.NavigateTo("producto/list"))">Cerrar</button>
             </div>
-        </EditForm>
+        </div>
     }
 </div>
 
 @code {
-    private readonly CreateMyOrderRequest request = new();
+    private readonly CreateMyOrderRequest request = new() { Lines = [new OrderLineRequest()] };
     private List<ProductResponse> products = [];
     private bool isLoading = true;
     private bool isBusy;
     private string? message;
-
-    private ProductResponse? SelectedProduct => products.Find(p => p.Id == request.ProductId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -61,6 +40,12 @@
 
     private async Task CreateAsync()
     {
+        if (!OrderLinesEditor.AreComplete(request.Lines))
+        {
+            message = "Elige un producto y una cantidad entre 1 y 1.000 en cada línea.";
+            return;
+        }
+
         isBusy = true;
         var result = await Orders.CreateMineAsync(request);
         if (result.IsSuccess)
@@ -69,9 +54,12 @@
             return;
         }
 
-        message = result.StatusCode == HttpStatusCode.NotFound
-            ? "El producto ya no existe."
-            : "No se pudo crear el pedido.";
+        message = result.StatusCode switch
+        {
+            HttpStatusCode.NotFound => "Uno de los productos ya no existe.",
+            HttpStatusCode.BadRequest => "Uno de los productos ya no está disponible.",
+            _ => "No se pudo crear el pedido.",
+        };
         isBusy = false;
     }
 }

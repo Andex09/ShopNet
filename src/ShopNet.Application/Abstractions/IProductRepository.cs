@@ -10,6 +10,9 @@ public interface IProductRepository
     /// <summary>The product with its category, active or not.</summary>
     Task<Product?> GetByIdAsync(int id, CancellationToken cancellationToken);
 
+    /// <summary>The products with these ids that exist (missing ids are simply absent from the result).</summary>
+    Task<IReadOnlyList<Product>> GetByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken);
+
     Task<bool> AnyInCategoryAsync(int categoryId, CancellationToken cancellationToken);
 
     void Add(Product product);

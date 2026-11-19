@@ -87,30 +87,38 @@ internal sealed class UpdateUserRequestValidator : AbstractValidator<UpdateUserR
     }
 }
 
+internal sealed class OrderLineRequestValidator : AbstractValidator<OrderLineRequest>
+{
+    public OrderLineRequestValidator()
+    {
+        RuleFor(x => x.ProductId).GreaterThan(0);
+        RuleFor(x => x.Quantity).InclusiveBetween(1, Order.MaxQuantityPerLine);
+    }
+}
+
+internal static class OrderLineRules
+{
+    public static void ValidLines<T>(this IRuleBuilder<T, List<OrderLineRequest>> rule) =>
+        rule.NotEmpty().WithMessage("An order needs at least one line.")
+            .Must(lines => lines.Count <= Order.MaxLines).WithMessage($"An order cannot have more than {Order.MaxLines} lines.")
+            .ForEach(line => line.NotNull().SetValidator(new OrderLineRequestValidator()));
+}
+
 internal sealed class CreateOrderRequestValidator : AbstractValidator<CreateOrderRequest>
 {
     public CreateOrderRequestValidator()
     {
         RuleFor(x => x.UserId).GreaterThan(0);
-        RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.Quantity).InclusiveBetween(1, Order.MaxQuantity);
+        RuleFor(x => x.Lines).ValidLines();
     }
 }
 
 internal sealed class CreateMyOrderRequestValidator : AbstractValidator<CreateMyOrderRequest>
 {
-    public CreateMyOrderRequestValidator()
-    {
-        RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.Quantity).InclusiveBetween(1, Order.MaxQuantity);
-    }
+    public CreateMyOrderRequestValidator() => RuleFor(x => x.Lines).ValidLines();
 }
 
 internal sealed class UpdateOrderRequestValidator : AbstractValidator<UpdateOrderRequest>
 {
-    public UpdateOrderRequestValidator()
-    {
-        RuleFor(x => x.ProductId).GreaterThan(0);
-        RuleFor(x => x.Quantity).InclusiveBetween(1, Order.MaxQuantity);
-    }
+    public UpdateOrderRequestValidator() => RuleFor(x => x.Lines).ValidLines();
 }

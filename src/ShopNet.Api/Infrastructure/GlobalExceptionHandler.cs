@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics;
 using ShopNet.Application.Common;
 using ShopNet.Domain.Common;
+using ShopNet.Domain.Orders;
 
 namespace ShopNet.Api.Infrastructure;
 
@@ -18,6 +19,7 @@ internal sealed partial class GlobalExceptionHandler(
         {
             NotFoundException e => (StatusCodes.Status404NotFound, "Resource not found", e.Message),
             ConflictException e => (StatusCodes.Status409Conflict, "Conflict", e.Message),
+            OrderStateException e => (StatusCodes.Status409Conflict, "Order status does not allow it", e.Message),
             DomainException e => (StatusCodes.Status400BadRequest, "Business rule violated", e.Message),
             BadHttpRequestException e => (e.StatusCode, "Bad request", "The request could not be read."),
             OperationCanceledException when httpContext.RequestAborted.IsCancellationRequested =>

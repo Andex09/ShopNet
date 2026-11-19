@@ -3,12 +3,13 @@
     <thead>
         <tr>
             <th>#</th>
+            <th>Fecha</th>
             @if (ShowUser)
             {
                 <th>Usuario</th>
             }
-            <th>Producto</th>
-            <th class="text-end">Cantidad</th>
+            <th>Productos</th>
+            <th>Estado</th>
             <th class="text-end">Total</th>
             @if (ShowActions)
             {
@@ -21,12 +22,13 @@
         {
             <tr>
                 <td>@order.Id</td>
+                <td class="text-nowrap">@order.CreatedAt.ToLocalTime().ToString("g")</td>
                 @if (ShowUser)
                 {
-                    <td>@Name(UserNames, order.UserId)</td>
+                    <td>@(UserNames.TryGetValue(order.UserId, out var name) ? name : $"#{order.UserId}")</td>
                 }
-                <td>@Name(ProductNames, order.ProductId)</td>
-                <td class="text-end">@order.Quantity</td>
+                <td>@Summary(order)</td>
+                <td><OrderStatusBadge Status="@order.Status" /></td>
                 <td class="text-end">@order.Total.ToString("C0")</td>
                 @if (ShowActions)
                 {
@@ -45,9 +47,6 @@
     public IReadOnlyList<OrderResponse> Orders { get; set; } = [];
 
     [Parameter]
-    public IReadOnlyDictionary<int, string> ProductNames { get; set; } = new Dictionary<int, string>();
-
-    [Parameter]
     public IReadOnlyDictionary<int, string> UserNames { get; set; } = new Dictionary<int, string>();
 
     [Parameter]
@@ -56,6 +55,11 @@
     [Parameter]
     public bool ShowActions { get; set; }
 
-    private static string Name(IReadOnlyDictionary<int, string> names, int id) =>
-        names.TryGetValue(id, out var name) ? name : $"#{id}";
+    /// <summary>"Producto" or "Producto y 2 más".</summary>
+    private static string Summary(OrderResponse order) => order.Lines switch
+    {
+        [] => "—",
+        [var only] => $"{only.ProductName} × {only.Quantity}",
+        [var first, ..] => $"{first.ProductName} y {order.Lines.Count - 1} más",
+    };
 }

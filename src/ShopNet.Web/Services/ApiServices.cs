@@ -63,12 +63,18 @@ public sealed class OrderService(ApiClient api)
 
     public Task<ApiResult> UpdateAsync(int id, UpdateOrderRequest request) => api.PutAsync($"api/orders/{id}", request);
 
-    public Task<ApiResult> DeleteAsync(int id) => api.DeleteAsync($"api/orders/{id}");
+    public Task<ApiResult> ConfirmAsync(int id) => api.PostAsync($"api/orders/{id}/confirm");
+
+    public Task<ApiResult> CancelAsync(int id) => api.PostAsync($"api/orders/{id}/cancel");
 
     public Task<ApiResult<List<OrderResponse>>> GetMineAsync() => api.GetAsync<List<OrderResponse>>("api/me/orders");
 
+    public Task<ApiResult<OrderResponse>> GetMineAsync(int id) => api.GetAsync<OrderResponse>($"api/me/orders/{id}");
+
     public Task<ApiResult<OrderResponse>> CreateMineAsync(CreateMyOrderRequest request) =>
         api.PostAsync<CreateMyOrderRequest, OrderResponse>("api/me/orders", request);
+
+    public Task<ApiResult> CancelMineAsync(int id) => api.PostAsync($"api/me/orders/{id}/cancel");
 }
 
 /// <summary>Order totals shown while filling a form. Only an estimate: the API calculates the real amounts.</summary>
@@ -76,9 +82,13 @@ public static class OrderEstimate
 {
     public const decimal TaxRate = 0.19m;
 
-    public static (decimal Subtotal, decimal Tax, decimal Total) Calculate(decimal unitPrice, int quantity)
+    /// <summary>Same rules as the server: each line rounded, tax once on the subtotal.</summary>
+    public static decimal LineTotal(decimal unitPrice, int quantity) =>
+        Math.Round(unitPrice * quantity, 2, MidpointRounding.AwayFromZero);
+
+    public static (decimal Subtotal, decimal Tax, decimal Total) Calculate(IEnumerable<(decimal UnitPrice, int Quantity)> lines)
     {
-        var subtotal = Math.Round(unitPrice * quantity, 2, MidpointRounding.AwayFromZero);
+        var subtotal = lines.Sum(l => LineTotal(l.UnitPrice, l.Quantity));
         var tax = Math.Round(subtotal * TaxRate, 2, MidpointRounding.AwayFromZero);
         return (subtotal, tax, subtotal + tax);
     }

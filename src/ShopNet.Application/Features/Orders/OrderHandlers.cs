@@ -32,19 +32,29 @@ public sealed class GetMyOrdersHandler(IOrderRepository orders, ICurrentUser cur
 {
     public async Task<IReadOnlyList<OrderResponse>> HandleAsync(CancellationToken cancellationToken)
     {
-        var userId = currentUser.UserId ?? throw new InvalidOperationException("No authenticated user.");
-        var items = await orders.ListByUserAsync(userId, cancellationToken);
+        var items = await orders.ListByUserAsync(currentUser.RequireUserId(), cancellationToken);
         return [.. items.Select(o => o.ToResponse())];
     }
 }
 
-/// <summary>Creates an order. Prices and totals are calculated from the stored product, not from the request.</summary>
+/// <summary>One of the signed-in user's orders. Someone else's order is reported as not found, not as forbidden.</summary>
+public sealed class GetMyOrderByIdHandler(IOrderRepository orders, ICurrentUser currentUser)
+{
+    public async Task<OrderResponse> HandleAsync(int id, CancellationToken cancellationToken)
+    {
+        var order = await orders.GetOwnedAsync(id, currentUser, cancellationToken);
+        return order.ToResponse();
+    }
+}
+
+/// <summary>Creates a pending order. Prices and totals are calculated from the stored products, not from the request.</summary>
 public sealed class CreateOrderHandler(
     IOrderRepository orders,
     IProductRepository products,
     IUserAccounts users,
     IUnitOfWork unitOfWork,
     IOptions<OrderOptions> options,
+    TimeProvider timeProvider,
     ILogger<CreateOrderHandler> logger)
 {
     public async Task<OrderResponse> HandleAsync(CreateOrderRequest request, CancellationToken cancellationToken)
@@ -56,10 +66,8 @@ public sealed class CreateOrderHandler(
             throw new NotFoundException("User", request.UserId);
         }
 
-        var product = await products.GetByIdAsync(request.ProductId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Product), request.ProductId);
-
-        var order = Order.Create(request.UserId, product, request.Quantity, options.Value.TaxRate);
+        var lines = await products.LoadLinesAsync(request.Lines, cancellationToken);
+        var order = Order.Create(request.UserId, lines, options.Value.TaxRate, timeProvider.GetUtcNow());
         orders.Add(order);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -74,18 +82,13 @@ public sealed class CreateMyOrderHandler(CreateOrderHandler createOrder, ICurren
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var userId = currentUser.UserId ?? throw new InvalidOperationException("No authenticated user.");
         return createOrder.HandleAsync(
-            new CreateOrderRequest { UserId = userId, ProductId = request.ProductId, Quantity = request.Quantity },
+            new CreateOrderRequest { UserId = currentUser.RequireUserId(), Lines = request.Lines },
             cancellationToken);
     }
 }
 
-public sealed class UpdateOrderHandler(
-    IOrderRepository orders,
-    IProductRepository products,
-    IUnitOfWork unitOfWork,
-    IOptions<OrderOptions> options)
+public sealed class UpdateOrderHandler(IOrderRepository orders, IProductRepository products, IUnitOfWork unitOfWork)
 {
     public async Task HandleAsync(int id, UpdateOrderRequest request, CancellationToken cancellationToken)
     {
@@ -94,26 +97,76 @@ public sealed class UpdateOrderHandler(
         var order = await orders.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Order), id);
 
-        var product = await products.GetByIdAsync(request.ProductId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Product), request.ProductId);
-
-        order.Change(product, request.Quantity, options.Value.TaxRate);
+        order.ReplaceLines(await products.LoadLinesAsync(request.Lines, cancellationToken));
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
 
-public sealed class DeleteOrderHandler(
-    IOrderRepository orders,
-    IUnitOfWork unitOfWork,
-    ILogger<DeleteOrderHandler> logger)
+public sealed class ConfirmOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, ILogger<ConfirmOrderHandler> logger)
 {
     public async Task HandleAsync(int id, CancellationToken cancellationToken)
     {
         var order = await orders.GetByIdAsync(id, cancellationToken)
             ?? throw new NotFoundException(nameof(Order), id);
 
-        orders.Remove(order);
+        order.Confirm();
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        logger.OrderDeleted(id);
+        logger.OrderConfirmed(id);
+    }
+}
+
+public sealed class CancelOrderHandler(IOrderRepository orders, IUnitOfWork unitOfWork, ILogger<CancelOrderHandler> logger)
+{
+    public async Task HandleAsync(int id, CancellationToken cancellationToken)
+    {
+        var order = await orders.GetByIdAsync(id, cancellationToken)
+            ?? throw new NotFoundException(nameof(Order), id);
+
+        order.Cancel();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        logger.OrderCancelled(id);
+    }
+}
+
+public sealed class CancelMyOrderHandler(
+    IOrderRepository orders,
+    ICurrentUser currentUser,
+    IUnitOfWork unitOfWork,
+    ILogger<CancelMyOrderHandler> logger)
+{
+    public async Task HandleAsync(int id, CancellationToken cancellationToken)
+    {
+        var order = await orders.GetOwnedAsync(id, currentUser, cancellationToken);
+
+        order.Cancel();
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        logger.OrderCancelled(id);
+    }
+}
+
+internal static class OrderHandlerExtensions
+{
+    public static int RequireUserId(this ICurrentUser currentUser) =>
+        currentUser.UserId ?? throw new InvalidOperationException("No authenticated user.");
+
+    public static async Task<Order> GetOwnedAsync(
+        this IOrderRepository orders, int id, ICurrentUser currentUser, CancellationToken cancellationToken)
+    {
+        var order = await orders.GetByIdAsync(id, cancellationToken);
+        return order is not null && order.UserId == currentUser.RequireUserId()
+            ? order
+            : throw new NotFoundException(nameof(Order), id);
+    }
+
+    /// <summary>Loads every requested product in one query. An unknown product is a 404 naming it.</summary>
+    public static async Task<IReadOnlyList<(Product Product, int Quantity)>> LoadLinesAsync(
+        this IProductRepository products, IReadOnlyCollection<OrderLineRequest> lines, CancellationToken cancellationToken)
+    {
+        var ids = lines.Select(l => l.ProductId).Distinct().ToList();
+        var found = (await products.GetByIdsAsync(ids, cancellationToken)).ToDictionary(p => p.Id);
+
+        return [.. lines.Select(l => found.TryGetValue(l.ProductId, out var product)
+            ? (product, l.Quantity)
+            : throw new NotFoundException(nameof(Product), l.ProductId))];
     }
 }

@@ -42,7 +42,7 @@ public class CatalogTests(ApiFactory factory)
         var admin = await factory.CreateAdminClientAsync();
         var customer = await factory.CreateCustomerClientAsync();
         var product = await CreateProductAsync(admin, "Producto con pedidos");
-        (await customer.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = product.Id, Quantity = 1 }, Ct))
+        (await customer.PostAsJsonAsync("/api/me/orders", TestOrders.Of(product.Id, 1), Ct))
             .StatusCode.ShouldBe(HttpStatusCode.Created);
 
         (await admin.DeleteAsync($"/api/products/{product.Id}", Ct)).StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -54,7 +54,7 @@ public class CatalogTests(ApiFactory factory)
             .ShouldNotContain(p => p.Id == product.Id);
         (await admin.GetFromJsonAsync<List<ProductResponse>>("/api/products?includeInactive=true", Ct)).ShouldNotBeNull()
             .ShouldContain(p => p.Id == product.Id);
-        (await customer.PostAsJsonAsync("/api/me/orders", new CreateMyOrderRequest { ProductId = product.Id, Quantity = 1 }, Ct))
+        (await customer.PostAsJsonAsync("/api/me/orders", TestOrders.Of(product.Id, 1), Ct))
             .StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
