@@ -4,5 +4,5 @@ namespace ShopNet.Contracts.Users;
 public static class RoleNames
 {
     public const string Admin = "Admin";
-    public const string Basic = "Basic";
+    public const string Customer = "Customer";
 }

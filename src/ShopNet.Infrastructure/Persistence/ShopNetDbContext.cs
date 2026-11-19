@@ -1,19 +1,24 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using ShopNet.Application.Abstractions;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
-using ShopNet.Domain.Users;
+using ShopNet.Infrastructure.Identity;
 
 namespace ShopNet.Infrastructure.Persistence;
 
-public sealed class ShopNetDbContext(DbContextOptions<ShopNetDbContext> options) : DbContext(options), IUnitOfWork
+/// <summary>Catalog and orders plus the ASP.NET Core Identity tables (AspNetUsers, AspNetRoles...).</summary>
+public sealed class ShopNetDbContext(DbContextOptions<ShopNetDbContext> options)
+    : IdentityDbContext<AppUser, IdentityRole<int>, int>(options), IUnitOfWork
 {
     public DbSet<Product> Products => Set<Product>();
 
-    public DbSet<User> Users => Set<User>();
-
     public DbSet<Order> Orders => Set<Order>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder) =>
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ShopNetDbContext).Assembly);
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        builder.ApplyConfigurationsFromAssembly(typeof(ShopNetDbContext).Assembly);
+    }
 }

@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using ShopNet.Application.Abstractions;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
-using ShopNet.Domain.Users;
 
 namespace ShopNet.Infrastructure.Persistence;
 
@@ -17,25 +16,6 @@ internal sealed class ProductRepository(ShopNetDbContext db) : IProductRepositor
     public void Add(Product product) => db.Products.Add(product);
 
     public void Remove(Product product) => db.Products.Remove(product);
-}
-
-internal sealed class UserRepository(ShopNetDbContext db) : IUserRepository
-{
-    public async Task<IReadOnlyList<User>> ListAsync(CancellationToken cancellationToken) =>
-        await db.Users.AsNoTracking().OrderBy(u => u.UserName).ToListAsync(cancellationToken);
-
-    public Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
-        db.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-
-    public Task<User?> GetByUserNameAsync(string normalizedUserName, CancellationToken cancellationToken) =>
-        db.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
-
-    public Task<bool> UserNameExistsAsync(string normalizedUserName, int? excludeUserId, CancellationToken cancellationToken) =>
-        db.Users.AnyAsync(u => u.UserName == normalizedUserName && u.Id != excludeUserId, cancellationToken);
-
-    public void Add(User user) => db.Users.Add(user);
-
-    public void Remove(User user) => db.Users.Remove(user);
 }
 
 internal sealed class OrderRepository(ShopNetDbContext db) : IOrderRepository

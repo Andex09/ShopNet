@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ShopNet.Application.Abstractions;
-using ShopNet.Domain.Users;
 
 namespace ShopNet.Infrastructure.Security;
 
@@ -11,7 +10,7 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
 {
     private readonly JsonWebTokenHandler _handler = new();
 
-    public string CreateToken(User user)
+    public string CreateToken(UserAccount user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -20,11 +19,15 @@ internal sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider
 
         var descriptor = new SecurityTokenDescriptor
         {
+            Issuer = settings.Issuer,
+            Audience = settings.Audience,
+
             // Short JWT claim names; the API maps them back to ClaimTypes.NameIdentifier/Name/Role.
             Claims = new Dictionary<string, object>
             {
                 [JwtRegisteredClaimNames.Sub] = user.Id.ToString(CultureInfo.InvariantCulture),
                 [JwtRegisteredClaimNames.UniqueName] = user.UserName,
+                [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString("N"),
                 ["role"] = user.Role,
             },
             IssuedAt = now,

@@ -18,7 +18,13 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException("Missing 'ApiBaseUrl' in wwwroot/appsettings.json.");
 
-builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new Uri(apiBaseUrl) });
+builder.Services.AddScoped(sp => new HttpClient(new BearerTokenHandler(sp.GetRequiredService<SessionAuthStateProvider>())
+{
+    InnerHandler = new HttpClientHandler(),
+})
+{
+    BaseAddress = new Uri(apiBaseUrl),
+});
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProductService>();
@@ -26,6 +32,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<OrderService>();
 
 builder.Services.AddBlazoredSessionStorage();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<SessionAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<SessionAuthStateProvider>());

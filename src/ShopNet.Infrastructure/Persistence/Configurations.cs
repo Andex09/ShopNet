@@ -1,8 +1,10 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
 using ShopNet.Domain.Users;
+using ShopNet.Infrastructure.Identity;
 
 namespace ShopNet.Infrastructure.Persistence;
 
@@ -22,20 +24,6 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     }
 }
 
-internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
-{
-    public void Configure(EntityTypeBuilder<User> builder)
-    {
-        builder.ToTable("Users");
-        builder.HasKey(u => u.Id);
-        builder.Property(u => u.UserName).HasMaxLength(User.UserNameMaxLength).IsRequired();
-        builder.HasIndex(u => u.UserName).IsUnique();
-        builder.Property(u => u.Role).HasMaxLength(20).IsRequired();
-        builder.Property(u => u.PasswordHash).HasMaxLength(64).IsRequired();
-        builder.Property(u => u.PasswordSalt).HasMaxLength(128).IsRequired();
-    }
-}
-
 internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 {
     public void Configure(EntityTypeBuilder<Order> builder)
@@ -49,7 +37,16 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.Total).HasPrecision(18, 2);
 
         // Restrict (not cascade): deleting a user or product must never erase order history.
-        builder.HasOne<User>().WithMany().HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<AppUser>().WithMany().HasForeignKey(o => o.UserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Product>().WithMany().HasForeignKey(o => o.ProductId).OnDelete(DeleteBehavior.Restrict);
     }
+}
+
+/// <summary>The two fixed roles. Seeded with constant values so migrations stay deterministic.</summary>
+internal sealed class RoleConfiguration : IEntityTypeConfiguration<IdentityRole<int>>
+{
+    public void Configure(EntityTypeBuilder<IdentityRole<int>> builder) =>
+        builder.HasData(
+            new IdentityRole<int> { Id = 1, Name = Roles.Admin, NormalizedName = "ADMIN", ConcurrencyStamp = "8f9c2a51-4a3e-4b5f-9d6e-1c0b7a2e3f41" },
+            new IdentityRole<int> { Id = 2, Name = Roles.Customer, NormalizedName = "CUSTOMER", ConcurrencyStamp = "3d7e4b62-9c1f-4e8a-b5d0-6f2a8c9e1b73" });
 }

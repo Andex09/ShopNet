@@ -5,7 +5,6 @@ using ShopNet.Application.Common;
 using ShopNet.Contracts.Orders;
 using ShopNet.Domain.Orders;
 using ShopNet.Domain.Products;
-using ShopNet.Domain.Users;
 
 namespace ShopNet.Application.Features.Orders;
 
@@ -43,7 +42,7 @@ public sealed class GetMyOrdersHandler(IOrderRepository orders, ICurrentUser cur
 public sealed class CreateOrderHandler(
     IOrderRepository orders,
     IProductRepository products,
-    IUserRepository users,
+    IUserAccounts users,
     IUnitOfWork unitOfWork,
     IOptions<OrderOptions> options,
     ILogger<CreateOrderHandler> logger)
@@ -52,8 +51,10 @@ public sealed class CreateOrderHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        _ = await users.GetByIdAsync(request.UserId, cancellationToken)
-            ?? throw new NotFoundException(nameof(User), request.UserId);
+        if (!await users.ExistsAsync(request.UserId, cancellationToken))
+        {
+            throw new NotFoundException("User", request.UserId);
+        }
 
         var product = await products.GetByIdAsync(request.ProductId, cancellationToken)
             ?? throw new NotFoundException(nameof(Product), request.ProductId);

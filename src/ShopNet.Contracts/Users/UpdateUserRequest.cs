@@ -12,5 +12,5 @@ public sealed class UpdateUserRequest
     public string? Password { get; set; }
 
     [Required]
-    public string Role { get; set; } = RoleNames.Basic;
+    public string Role { get; set; } = RoleNames.Customer;
 }

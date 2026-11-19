@@ -1,27 +1,20 @@
 using Microsoft.Extensions.Logging;
 using ShopNet.Application.Abstractions;
-using ShopNet.Application.Features.Users;
+using ShopNet.Application.Common;
 using ShopNet.Contracts.Auth;
 using ShopNet.Contracts.Users;
 using ShopNet.Domain.Users;
-using ShopNet.Application.Common;
 
 namespace ShopNet.Application.Features.Auth;
 
-/// <summary>Self-registration. New accounts always get the Basic role.</summary>
-public sealed class RegisterHandler(
-    IUserRepository users,
-    IPasswordHasher passwordHasher,
-    IUnitOfWork unitOfWork,
-    ILogger<RegisterHandler> logger)
+/// <summary>Self-registration. New accounts always get the Customer role.</summary>
+public sealed class RegisterHandler(IUserAccounts users, ILogger<RegisterHandler> logger)
 {
     public async Task<UserResponse> HandleAsync(RegisterRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var user = await CreateUserHandler.CreateAsync(
-            users, passwordHasher, request.UserName, request.Password, Roles.Basic, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        var user = await users.CreateAsync(request.UserName, request.Password, Roles.Customer, cancellationToken);
 
         logger.UserRegistered(user.Id);
         return user.ToResponse();
@@ -29,24 +22,32 @@ public sealed class RegisterHandler(
 }
 
 public sealed class LoginHandler(
-    IUserRepository users,
-    IPasswordHasher passwordHasher,
+    IUserAccounts users,
     ITokenService tokenService,
     ILogger<LoginHandler> logger)
 {
-    /// <returns>The token and user, or <c>null</c> when the credentials are invalid.</returns>
+    /// <returns>
+    /// The token and user, or <c>null</c> when the credentials are invalid or the account is locked out.
+    /// Both look the same to the caller, so the response does not reveal which accounts exist.
+    /// </returns>
     public async Task<LoginResponse?> HandleAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var user = await users.GetByUserNameAsync(User.NormalizeUserName(request.UserName), cancellationToken);
-        if (user is null || !passwordHasher.VerifyPassword(request.Password, user.PasswordHash, user.PasswordSalt))
+        var result = await users.CheckCredentialsAsync(request.UserName, request.Password, cancellationToken);
+        switch (result)
         {
-            logger.LoginFailed(request.UserName);
-            return null;
-        }
+            case { Status: CredentialCheckStatus.Succeeded, User: { } user }:
+                logger.LoginSucceeded(user.Id);
+                return new LoginResponse(tokenService.CreateToken(user), user.ToResponse());
 
-        logger.LoginSucceeded(user.Id);
-        return new LoginResponse(tokenService.CreateToken(user), user.ToResponse());
+            case { Status: CredentialCheckStatus.LockedOut }:
+                logger.LoginLockedOut(request.UserName);
+                return null;
+
+            default:
+                logger.LoginFailed(request.UserName);
+                return null;
+        }
     }
 }

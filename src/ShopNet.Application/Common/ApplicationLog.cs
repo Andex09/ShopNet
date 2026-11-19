@@ -14,6 +14,9 @@ internal static partial class ApplicationLog
     [LoggerMessage(EventId = 1002, Level = LogLevel.Information, Message = "User {UserId} signed in")]
     public static partial void LoginSucceeded(this ILogger logger, int userId);
 
+    [LoggerMessage(EventId = 1003, Level = LogLevel.Warning, Message = "Login rejected for user name {UserName}: account locked out")]
+    public static partial void LoginLockedOut(this ILogger logger, string userName);
+
     [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Product {ProductId} created")]
     public static partial void ProductCreated(this ILogger logger, int productId);
 

@@ -84,7 +84,7 @@
     private async Task SaveAsync()
     {
         isBusy = true;
-        var role = form.IsAdmin ? RoleNames.Admin : RoleNames.Basic;
+        var role = form.IsAdmin ? RoleNames.Admin : RoleNames.Customer;
 
         var status = UserId is { } id
             ? (await Users.UpdateAsync(id, new UpdateUserRequest

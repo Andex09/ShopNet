@@ -8,7 +8,11 @@ public static class AuthEndpoints
 {
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/auth").WithTags("Auth").AllowAnonymous();
+        var group = app.MapGroup("/api/auth")
+            .WithTags("Auth")
+            .AllowAnonymous()
+            .RequireRateLimiting(RateLimiting.AuthPolicy)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         group.MapPost("/register", async (RegisterRequest request, RegisterHandler handler, CancellationToken ct) =>
             {
@@ -16,7 +20,7 @@ public static class AuthEndpoints
                 return TypedResults.Created($"/api/users/{user.Id}", user);
             })
             .WithName("Register")
-            .WithSummary("Create an account with the Basic role.")
+            .WithSummary("Create an account with the Customer role.")
             .WithValidation<RegisterRequest>()
             .ProducesProblem(StatusCodes.Status409Conflict);
 

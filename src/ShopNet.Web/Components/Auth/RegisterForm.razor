@@ -43,6 +43,7 @@
         {
             _ when result.IsSuccess => (AlertMessageType.Success, "Usuario creado. Ya puedes iniciar sesión."),
             HttpStatusCode.Conflict => (AlertMessageType.Error, "Ya existe un usuario con ese nombre."),
+            HttpStatusCode.TooManyRequests => (AlertMessageType.Error, "Demasiados intentos. Espera un minuto e intenta de nuevo."),
             HttpStatusCode.BadRequest => (AlertMessageType.Error, "Revisa los datos: el usuario solo admite letras, números, '.', '_' y '-'."),
             _ => (AlertMessageType.Error, "No se pudo crear el usuario."),
         };
